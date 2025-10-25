@@ -1,0 +1,96 @@
+substitutions:
+  device_name: dryer-current
+  friendly_name: Dryer Current Sensor
+
+esphome:
+  name: "${device_name}"
+  name_add_mac_suffix: false
+  friendly_name: "${friendly_name}"
+
+esp8266:
+  board: nodemcuv2
+  
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over the air update with password
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name} AP"
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi signal"
+    id: "dryer_sensor_wifi_signal"
+    update_interval: 60s
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    id: "dryer_sensor_uptime"
+    update_interval: 60s
+
+  - platform: ct_clamp
+    sensor: adc_sensor
+    name: "Dryer Apms"
+    unit_of_measurement: "A"
+    icon: "mdi:flash-circle"
+    id: dryer_amps
+    update_interval: 20s
+    filters:
+      - calibrate_linear:
+          - 0.0 -> 0.0
+          - 0.058 -> 7.00
+      - round: 2
+    on_value:
+      then:
+        - sensor.template.publish:
+            id: dryer_code
+            # codes: 0 Idle, 1 Door Open, 2 Drying
+            state: !lambda |-
+              if (x > 5) return 2; 
+              return 0;
+
+#              if (x > 1) return 1;
+
+  - platform: template
+    id: dryer_code
+    internal: true
+#    filters:
+#      - debounce: 2s
+    on_value:
+      then:
+        - text_sensor.template.publish:
+            id: dryer
+            state: !lambda |-
+              if (x == 2) return "Drying";
+              return "Idle";
+
+#              if (x == 1) return "Door Open";
+
+              
+  - platform: adc
+    pin: A0
+    id: adc_sensor
+
+text_sensor:
+  - platform: template
+    name: "Dryer"
+    id: dryer
+    icon: "mdi:tumble-dryer"

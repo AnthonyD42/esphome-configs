@@ -1,0 +1,38 @@
+substitutions:
+  name: kauf-bulb-a19-01
+  friendly_name: Kauf Bulb a19 01
+
+packages:
+  Kauf.RGBWW: github://KaufHA/kauf-rgbww-bulbs/kauf-bulb.yaml
+
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: false
+  friendly_name: "${friendly_name}"
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over the air update with password
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name} AP"
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+

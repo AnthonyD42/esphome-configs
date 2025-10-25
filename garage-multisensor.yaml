@@ -1,0 +1,131 @@
+substitutions:
+  name: garage-multisensor
+  friendly_name: Garage Multisensor
+
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: false
+  friendly_name: "${friendly_name}"
+
+esp8266:
+  board: nodemcuv2
+  
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over the air update with password
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name} AP"
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+
+# Device config
+i2c:           #AHT20 is i2c
+  scan: true
+text_sensor:
+  - platform: version
+    name: "${friendly_name} ESPHome Version"
+    id: "garage_multisensor_esphome_version"
+
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi signal"
+    id: "garage_multisensor_wifi_signal"
+    update_interval: 60s
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+    id: "garage_multisensor_uptime"
+    update_interval: 60s
+
+  # Temperatue / Humidity
+  - platform: aht10   #Also for AHT20
+    temperature:
+      name: "Garage Temperature"
+      id: aht10_temperature
+      device_class: temperature
+    humidity:
+      name: "Garage Humidity"
+      id: aht10_humidity
+      device_class: humidity
+    update_interval: 120s
+
+  - platform: template
+    name: "Garage Dew Point"
+    lambda: |-
+        return ((243.5*(log(id(aht10_humidity).state/100)+((17.67*id(aht10_temperature).state)/
+        (243.5+id(aht10_temperature).state)))/(17.67-log(id(aht10_humidity).state/100)-
+        ((17.67*id(aht10_temperature).state)/(243.5+id(aht10_temperature).state)))) * 1.8) + 32;
+    unit_of_measurement: °F
+    update_interval: 120s
+    icon: 'mdi:thermometer-water'
+
+#  # Analog Light Level
+#   - platform: adc
+#     pin: A0
+#     name: "Garage Analog Light Level"
+#     unit_of_measurement: lux
+#     device_class: illuminance
+#     update_interval: 10s
+#     filters:
+#     # this is a relative value - not true lux - adjust as needed for your install
+#       - lambda: |-
+#           return (2800/x) - 2700;
+
+binary_sensor:
+  # RCWL-0516 Motion
+  - platform: gpio
+    pin: D4
+    name: "Garage Motion Front"
+    device_class: motion
+    
+  # # Photoresistor module DO light level
+  # - platform: gpio
+  #   pin: D7
+  #   name: "Garage Digital Light Level"
+
+# # RGB LED
+# light:
+#   - platform: rgb
+#     id: light_1
+#     name: "Garage Sensor LED2"
+#     default_transition_length: 100ms
+#     red: output_component1
+#     green: output_component2
+#     blue: output_component3
+
+# # LED output
+# output:
+#   - platform: esp8266_pwm
+#     id: output_component1
+#     pin: D3
+#     max_power: 80%
+#   - platform: esp8266_pwm
+#     id: output_component2
+#     pin: D4
+#     max_power: 80%
+#   - platform: esp8266_pwm
+#     id: output_component3
+#     pin: D5
+#     max_power: 80%
+  
+switch:
+  - platform: restart
+    name: "Garage Multisensor Restart"
+  

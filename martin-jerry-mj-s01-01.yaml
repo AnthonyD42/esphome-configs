@@ -1,0 +1,119 @@
+# https://devices.esphome.io/devices/MJ-S01
+
+# https://esphome.io/guides/configuration-types.html#substitutions
+substitutions:
+  device_name: mj_s01_switch_01 # hostname & entity_id
+  friendly_name: MJ-S01 Switch 01 # Displayed in HA frontend
+  timer_duration: 0min # Duration for auto-off timer, set to "0min" to disable
+
+# https://esphome.io/components/esphome
+esphome:
+  name: "${device_name}"
+  name_add_mac_suffix: false
+  friendly_name: "${friendly_name}"
+
+esp8266:
+  board: esp01_1m
+  restore_from_flash: true
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over the air update with password
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name} AP"
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+  # https://esphome.io/components/web_server.html
+
+logger:
+  # https://esphome.io/components/logger
+
+switch:
+  # relay output
+  - platform: gpio
+    id: relay
+    name: Switch
+    pin: GPIO12
+
+    on_turn_on: #blue when on
+      - switch.turn_on: blue_led
+      - switch.turn_off: red_led
+      - if:
+          condition:
+            lambda: 'return std::string("${timer_duration}") != "0min";'
+          then:
+            - script.execute: auto_off
+
+    on_turn_off: #red when off
+      - if:
+          condition:
+            lambda: 'return std::string("${timer_duration}") != "0min";'
+          then:
+            - script.stop: auto_off
+      - switch.turn_off: blue_led
+      - switch.turn_on: red_led
+
+  - platform: gpio
+    # https://esphome.io/components/switch/gpio.html
+    pin: GPIO04
+    id: red_led
+    name: Red LED
+    inverted: true
+
+  - platform: gpio
+    # https://esphome.io/components/switch/gpio.html
+    pin: GPIO05
+    id: blue_led
+    name: Blue LED
+    inverted: true
+
+binary_sensor:
+  - platform: gpio
+    # https://esphome.io/components/binary_sensor/gpio.html
+    pin:
+      number: GPIO13
+      mode: INPUT_PULLUP
+    name: Main Button
+    internal: True
+    on_press:
+      - switch.toggle: relay
+
+button:
+  - platform: restart
+    id: restart_button
+    name: Restart
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: version
+    name: ESPHome Version
+    id: esphome_version
+    hide_timestamp: True
+
+sensor:
+  - platform: uptime
+    name: Uptime Sensor
+  - platform: wifi_signal
+    name: WiFi Signal
+
+script:
+  - id: auto_off
+    mode: restart
+    then:
+      - delay: ${timer_duration}
+      - switch.turn_off: relay

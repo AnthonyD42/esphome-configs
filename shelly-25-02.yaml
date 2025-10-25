@@ -1,0 +1,189 @@
+# https://devices.esphome.io/devices/Shelly-25
+
+substitutions:
+  device_name: shelly_25_02
+  friendly_name: Shelly 25 02
+
+esphome:
+  name: ${device_name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+
+esp8266:
+  board: esp8285
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over the air update with password
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${friendly_name} AP
+    password: !secret ap_password
+
+# Sets up the improv via serial client for Wi-Fi provisioning
+improv_serial:
+# In combination with the `ap` this allows the user
+# to provision wifi credentials to the device.
+captive_portal:
+
+web_server:
+
+i2c:
+  sda: GPIO12
+  scl: GPIO14
+
+
+binary_sensor:
+  - platform: homeassistant
+    entity_id: switch.zemismart_ks_811_middle_lights # "Middle Lights"
+    id: zemismart_ks_811_middle_lights_state
+  - platform: homeassistant
+    entity_id: switch.zemismart_ks_811_side_lights # Side Lights
+    id: zemismart_ks_811_side_lights_state
+
+  - platform: gpio
+    pin:
+      number: GPIO13
+    name: "Switch 1"
+    on_press:
+      then:
+        - light.toggle: light_1
+        - logger.log: "Toggled Relay 1"
+  - platform: gpio
+    pin:
+      number: GPIO5
+    name: "Switch 2"
+    on_press:
+      then:
+        - light.toggle: light_2
+        - logger.log: "Toggled Relay 2"
+
+text_sensor:
+  - platform: version
+    name: "${friendly_name} ESPHome Version"
+    id: "${device_name}_esphome_version"
+
+sensor:
+  # Devices WiFi Signal and Uptime  
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+  - platform: ade7953_i2c
+    irq_pin: GPIO16 # Prevent overheating by setting this
+    voltage:
+      name: Voltage
+    # On the Shelly 2.5 channels are mixed ch1=B ch2=A
+    current_a:
+      name: Current 2
+    current_b:
+      name: Current 1
+    active_power_a:
+      name: Active Power 2
+      # active_power_a is normal, so don't multiply by -1
+    active_power_b:
+      name: Active Power 1
+      # active_power_b is inverted, so take the absolute value
+      filters:
+        - lambda: return abs(x);
+    update_interval: 60s
+
+  # NTC Temperature
+  - platform: ntc
+    sensor: temp_resistance_reading
+    name: Temperature
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    icon: "mdi:thermometer"
+    calibration:
+      b_constant: 3350
+      reference_resistance: 10kOhm
+      reference_temperature: 298.15K
+  - platform: resistance
+    id: temp_resistance_reading
+    sensor: temp_analog_reading
+    configuration: DOWNSTREAM
+    resistor: 32kOhm
+  - platform: adc
+    id: temp_analog_reading
+    pin: A0
+
+status_led:
+  pin:
+    number: GPIO0
+    inverted: yes
+
+output:
+  - platform: gpio
+    pin:
+      number: GPIO4
+    id: relay_1
+  - platform: gpio
+    pin:
+      number: GPIO15
+    id: relay_2
+
+light:
+  - platform: binary
+    name: "Light 1"
+    output: relay_1
+    id: light_1
+    on_turn_on:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(zemismart_ks_811_middle_lights_state).state = "off";' # "off"
+            then:
+              - homeassistant.service:
+                  service: switch.turn_on
+                  data:
+                    entity_id: switch.zemismart_ks_811_middle_lights
+    on_turn_off:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(zemismart_ks_811_middle_lights_state).state = "on";' # "on"
+            then:
+              - homeassistant.service:
+                  service: switch.turn_off
+                  data:
+                    entity_id: switch.zemismart_ks_811_middle_lights
+
+  - platform: binary
+    name: "Light 2"
+    output: relay_2
+    id: light_2
+    on_turn_on:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(zemismart_ks_811_side_lights_state).state = "off";' # "off"
+            then:
+              - homeassistant.service:
+                  service: switch.turn_on
+                  data:
+                    entity_id: switch.zemismart_ks_811_side_lights
+    on_turn_off:
+      then:
+        - if:
+            condition:
+              lambda: 'return id(zemismart_ks_811_side_lights_state).state = "on";' # "on"
+            then:
+              - homeassistant.service:
+                  service: switch.turn_off
+                  data:
+                    entity_id: switch.zemismart_ks_811_side_lights

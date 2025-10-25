@@ -1,0 +1,242 @@
+# https://community.home-assistant.io/t/shelly-2-dimmer/232324/18
+
+substitutions:
+  device_name: shelly_dimmer_2
+  friendly_name: Shelly Dimmer 2
+  max_temp: "70" # °C
+
+esphome:
+  name: ${device_name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+
+esp8266:
+  board: esp01_1m
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# Enable over the air update with password
+ota:
+- platform: esphome
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ${friendly_name} AP
+    password: !secret ap_password
+
+# Enable logging
+logger:
+  baud_rate: 0
+
+captive_portal:
+
+web_server:
+
+uart:
+  tx_pin: 1
+  rx_pin: 3
+  baud_rate: 115200
+
+light:
+- platform: shelly_dimmer
+  name: Dimmer
+  id: dimmer
+  leading_edge: false #choose between leading edge and trailing edge (use trailing edge for led dimming)
+  min_brightness: 470
+  max_brightness: 1000
+  restore_mode: ALWAYS_OFF
+  default_transition_length: 1s
+  gamma_correct: 0 #change this to your liking. Default value is 2.8, but 0 prevents some brightness pops for me
+  firmware:
+    version: "51.6"
+    update: true
+
+text_sensor:
+- platform: version
+  name: "ESPHome Version"
+
+sensor:
+- platform: wifi_signal
+  name: "WiFi Signal"
+  update_interval: 60s
+#Important: don't change this sensor-part unless you know what you are doing. These sensors will shut the light down when overheating temperature is reached.
+# NTC Temperature
+- platform: ntc
+  sensor: temp_resistance_reading
+  name: Temperature
+  id: temperature
+  unit_of_measurement: "°C"
+  accuracy_decimals: 1
+  icon: "mdi:thermometer"
+  calibration:
+    b_constant: 3350
+    reference_resistance: 10kOhm
+    reference_temperature: 298.15K
+  on_value:
+    then:
+    - if:
+        condition:
+        - sensor.in_range:
+            id: temperature
+            above: ${max_temp}
+        - light.is_on: dimmer
+        then:
+        - light.turn_off:
+            id: dimmer
+        - logger.log: "Switch turned off because temperature exceeded ${max_temp}°C"
+        - homeassistant.service:
+            service: persistent_notification.create
+            data:
+              title: Message from ${device_name}
+            data_template:
+              message: Switch turned off because temperature exceeded ${max_temp}°C
+  on_value_range:
+  - above: ${max_temp}
+    then:
+    - logger.log: "Temperature exceeded ${max_temp}°C"
+    - homeassistant.service:
+        service: persistent_notification.create
+        data:
+          title: Message from ${device_name}
+        data_template:
+          message: Temperature exceeded ${max_temp}°C
+- platform: resistance
+  id: temp_resistance_reading
+  sensor: temp_analog_reading
+  configuration: DOWNSTREAM
+  resistor: 32kOhm
+- platform: adc
+  id: temp_analog_reading
+  pin: A0
+
+# --- Button / hold-to-dim support for two-way toggle switches ---
+# Global variable to store the current brightness (0.0 - 1.0)
+globals:
+  - id: brightness_level
+    type: float
+    initial_value: '0.0'
+
+binary_sensor:
+  # Up toggle (GPIO14)
+  - platform: gpio
+    pin: GPIO14
+      # number: GPIO14
+      # mode: INPUT_PULLUP
+      # inverted: True
+    id: up_switch
+    name: "Dimmer Up"
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+    on_press:
+      - script.execute: up_press_handler
+    on_release:
+      # Stop the hold/ramp script when the switch is released
+      - script.stop: up_ramp_script
+
+  # Down toggle (GPIO12)
+  - platform: gpio
+    pin: GPIO12
+      # number: GPIO12
+      # mode: INPUT_PULLUP
+      # inverted: True
+    id: down_switch
+    name: "Dimmer Down"
+    filters:
+      - delayed_on: 10ms
+      - delayed_off: 10ms
+    on_press:
+      - script.execute: down_press_handler
+    on_release:
+      - script.stop: down_ramp_script
+
+script:
+  # Handler distinguishing short press vs long press for UP
+  - id: up_press_handler
+    mode: restart
+    then:
+      # wait threshold to detect long press
+      - delay: 500ms
+      - if:
+          condition:
+            - binary_sensor.is_on: up_switch
+          then:
+            - script.execute: up_ramp_script
+          else:
+            # short press: turn on the dimmer with last brightness
+            - light.turn_on:
+                id: dimmer
+                brightness: !lambda |
+                  return id(brightness_level);
+
+  # Handler distinguishing short press vs long press for DOWN
+  - id: down_press_handler
+    mode: restart
+    then:
+      - delay: 500ms
+      - if:
+          condition:
+            - binary_sensor.is_on: down_switch
+          then:
+            - script.execute: down_ramp_script
+          else:
+            # short press: turn off the dimmer
+            - light.turn_off:
+                id: dimmer
+
+  # Ramp brightness up while UP switch is held
+  - id: up_ramp_script
+    mode: restart
+    then:
+      - while:
+          condition:
+            binary_sensor.is_on: up_switch
+          then:
+            # increase by small step
+            - lambda: |-
+                id(brightness_level) = fmin(1.0f, id(brightness_level) + 0.02f);
+            - light.turn_on:
+                id: dimmer
+                brightness: !lambda |
+                  return id(brightness_level);
+                transition_length: 0s
+            - delay: 100ms
+
+  # Ramp brightness down while DOWN switch is held
+  - id: down_ramp_script
+    mode: restart
+    then:
+      - while:
+          condition:
+            binary_sensor.is_on: down_switch
+          then:
+            - lambda: |-
+                id(brightness_level) = fmax(0.0f, id(brightness_level) - 0.02f);
+            - if:
+                condition:
+                  lambda: 'return id(brightness_level) <= 0.0f;'
+                then:
+                  - light.turn_off:
+                      id: dimmer
+                else:
+                  - light.turn_on:
+                      id: dimmer
+                      brightness: !lambda |
+                        return id(brightness_level);
+                      transition_length: 0s
+            - delay: 100ms
+
+# End button / hold-to-dim additions
+
+switch:
+- platform: restart
+  name: Reboot
+

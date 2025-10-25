@@ -1,0 +1,19 @@
+substitutions:
+  name: kauf-bulb-a15-02
+  friendly_name: Kauf Bulb a15 02
+
+packages:
+  Kauf.RGBWW: github://KaufHA/kauf-rgbww-bulbs/kauf-bulb.yaml
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+
+api:
+  encryption:
+    key: DpwZ9sQSe/6fiS9tnjx1n0jhQJ7l9aJ3dKBASx0wXDU=
+
+wifi:
+  ssid: !secret wifi_ssid_not_o
+  password: !secret wifi_not_password
