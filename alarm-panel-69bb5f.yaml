@@ -1,3 +1,4 @@
+# Adding Konnected Alarm Panel package
 substitutions:
   device_name: alarm-panel-69bb5f
   friendly_name: Alarm Panel
