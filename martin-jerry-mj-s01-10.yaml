@@ -49,6 +49,7 @@ switch:
     id: relay
     name: Switch
     pin: GPIO12
+    restore_mode: RESTORE_DEFAULT_OFF # Attempt to restore state and default to OFF if not possible to restore.
 
     on_turn_on: #blue when on
       - switch.turn_on: blue_led
