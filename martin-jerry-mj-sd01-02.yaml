@@ -32,38 +32,38 @@ esphome:
           condition:
             lambda: 'return id(ifan_light_on).state;'
           then:
-            - light.turn_on: led_main
+            - light.turn_on: led_main_light
           else:
-            - light.turn_off: led_main
+            - light.turn_off: led_main_light
       - if:
           condition:
             lambda: 'return id(ifan_fan_speed).state == "low";'
           then:
-            - light.turn_on: led_1
+            - light.turn_on: led_1_light
       - if:
           condition:
             lambda: 'return id(ifan_fan_speed).state == "medium";'
           then:
             - light.turn_on:
-                id: led_1
+                id: led_1_light
             - light.turn_on:
-                id: led_2
+                id: led_2_light
             - light.turn_on:
-                id: led_3
+                id: led_3_light
       - if:
           condition:
             lambda: 'return id(ifan_fan_speed).state == "high";'
           then:
             - light.turn_on:
-                id: led_1
+                id: led_1_light
             - light.turn_on:
-                id: led_2
+                id: led_2_light
             - light.turn_on:
-                id: led_3
+                id: led_3_light
             - light.turn_on:
-                id: led_4
+                id: led_4_light
             - light.turn_on:
-                id: led_5
+                id: led_5_light
 
 # https://esphome.io/components/esp8266.html  
 esp8266:
@@ -179,37 +179,42 @@ binary_sensor:
     id: ifan_light_on
     on_press:
       then:
-        - light.turn_on: led_main
+        - light.turn_on: led_main_light
     on_release:
       then:
-        - light.turn_off: led_main
-
+        - light.turn_off: led_main_light
 
 light:
   - platform: binary
     name: "LED Main"
     output: led_main
+    id: led_main_light
   - platform: binary
     name: "LED 1"
     output: led_1
+    id: led_1_light
   - platform: binary
     name: "LED 2"
     output: led_2
+    id: led_2_light
   - platform: binary
     name: "LED 3"
     output: led_3
+    id: led_3_light
   - platform: binary
     name: "LED 4"
     output: led_4
+    id: led_4_light
   - platform: binary
     name: "LED 5"
     output: led_5
+    id: led_5_light
 
 # Relay to control power to iFan04
 switch:
   - platform: gpio
     name: "Relay"
-    pin: GPIO12
+    pin: GPIO16
     id: relay_power
     restore_mode: RESTORE_DEFAULT_ON  # Optional: keep iFan04 powered on by default
 
