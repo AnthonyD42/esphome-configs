@@ -118,16 +118,32 @@ binary_sensor:
       number: GPIO0
       mode: INPUT_PULLUP
       inverted: true
-    name: "Main Button"
-    id: main_button
-    debounce: 50ms
+    id: main_button_raw
+
+# Template sensor to detect long press (≥5s)
+  - platform: template
+    name: "Main Button Long Press"
+    id: main_button_long
+    lambda: |-
+      return id(main_button_raw).state;
+    filters:
+      - delayed_on: 5s
+    on_press:
+      then:
+        - switch.toggle: relay_power
+
+# Regular short press (instant)
+  - platform: template
+    name: "Main Button Short Press"
+    id: main_button_short
+    lambda: |-
+      return id(main_button_raw).state;
+    filters:
+      - invert:
+      - delayed_off: 100ms  # debounce
     on_press:
       then:
         - script.execute: toggle_light
-    on_press_duration:
-      - duration: 5s
-        then:
-          - switch.toggle: relay_power
 
   # Up button (fan speed up)
   - platform: gpio
@@ -136,7 +152,6 @@ binary_sensor:
       mode: INPUT_PULLUP
       inverted: true
     name: "Fan Speed Up"
-    debounce: 50ms
     on_press:
       then:
         - homeassistant.service:
@@ -151,7 +166,6 @@ binary_sensor:
       mode: INPUT_PULLUP
       inverted: true
     name: "Fan Speed Down"
-    debounce: 50ms
     on_press:
       then:
         - homeassistant.service:
@@ -223,3 +237,12 @@ output:
     id: led_5
     pin: GPIO3 # LED 5
     inverted: true
+
+# Script to toggle light
+script:
+  - id: toggle_light
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.sonoff_ifan03_01_light
