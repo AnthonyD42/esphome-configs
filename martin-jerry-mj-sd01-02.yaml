@@ -37,12 +37,14 @@ esphome:
             - light.turn_off: led_main_light
       - if:
           condition:
-            lambda: 'return id(ifan_fan_speed).state == "low";'
+            # lambda: 'return id(ifan_fan_speed).state == "low";' 
+            lambda: 'return id(ifan_fan_speed).state == 1.0;' 
           then:
             - light.turn_on: led_1_light
       - if:
           condition:
-            lambda: 'return id(ifan_fan_speed).state == "medium";'
+            # lambda: 'return id(ifan_fan_speed).state == "medium";'
+            lambda: 'return id(ifan_fan_speed).state == 2.0;'
           then:
             - light.turn_on:
                 id: led_1_light
@@ -52,7 +54,8 @@ esphome:
                 id: led_3_light
       - if:
           condition:
-            lambda: 'return id(ifan_fan_speed).state == "high";'
+            # lambda: 'return id(ifan_fan_speed).state == "high";'
+            lambda: 'return id(ifan_fan_speed).state == 1.0;'
           then:
             - light.turn_on:
                 id: led_1_light
