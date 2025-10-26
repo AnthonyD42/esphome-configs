@@ -118,6 +118,7 @@ binary_sensor:
       number: GPIO0
       mode: INPUT_PULLUP
       inverted: true
+<<<<<<< HEAD
     id: main_button_raw
 
 # Template sensor to detect long press (≥5s)
@@ -144,6 +145,17 @@ binary_sensor:
     on_press:
       then:
         - script.execute: toggle_light
+=======
+    name: "Main Button"
+    id: main_button
+    on_press:
+      then:
+        - script.execute: toggle_light
+    on_press_duration:
+      - duration: 5s
+        then:
+          - switch.toggle: relay_power
+>>>>>>> fa001c81df5793ae3e022beca3a4447b0a541d98
 
   # Up button (fan speed up)
   - platform: gpio
@@ -236,6 +248,7 @@ output:
   - platform: gpio
     id: led_5
     pin: GPIO3 # LED 5
+<<<<<<< HEAD
     inverted: true
 
 # Script to toggle light
@@ -246,3 +259,6 @@ script:
           service: light.toggle
           data:
             entity_id: light.sonoff_ifan03_01_light
+=======
+    inverted: true
+>>>>>>> fa001c81df5793ae3e022beca3a4447b0a541d98
