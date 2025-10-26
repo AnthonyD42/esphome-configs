@@ -1,9 +1,9 @@
 substitutions:
-  name: garage-multisensor
+  device_name: garage-multisensor
   friendly_name: Garage Multisensor
 
 esphome:
-  name: "${name}"
+  name: "${device_name}"
   name_add_mac_suffix: false
   friendly_name: "${friendly_name}"
 
@@ -37,21 +37,20 @@ captive_portal:
 web_server:
 
 # Device config
-i2c:           #AHT20 is i2c
+#AHT20 is i2c
+i2c:
   scan: true
+
 text_sensor:
   - platform: version
-    name: "${friendly_name} ESPHome Version"
-    id: "garage_multisensor_esphome_version"
+    name: "ESPHome Version"
 
 sensor:
   - platform: wifi_signal
-    name: "${friendly_name} WiFi signal"
-    id: "garage_multisensor_wifi_signal"
+    name: "WiFi signal"
     update_interval: 60s
   - platform: uptime
-    name: "${friendly_name} Uptime"
-    id: "garage_multisensor_uptime"
+    name: "Uptime"
     update_interval: 60s
 
   # Temperatue / Humidity
@@ -76,17 +75,17 @@ sensor:
     update_interval: 120s
     icon: 'mdi:thermometer-water'
 
-#  # Analog Light Level
-#   - platform: adc
-#     pin: A0
-#     name: "Garage Analog Light Level"
-#     unit_of_measurement: lux
-#     device_class: illuminance
-#     update_interval: 10s
-#     filters:
-#     # this is a relative value - not true lux - adjust as needed for your install
-#       - lambda: |-
-#           return (2800/x) - 2700;
+ # Analog Light Level
+  # - platform: adc
+  #   pin: A0
+  #   name: "Garage Analog Light Level"
+  #   unit_of_measurement: lux
+  #   device_class: illuminance
+  #   update_interval: 10s
+  #   filters:
+  #   # this is a relative value - not true lux - adjust as needed for your install
+  #     - lambda: |-
+  #         return (2800/x) - 2700;
 
 binary_sensor:
   # RCWL-0516 Motion
