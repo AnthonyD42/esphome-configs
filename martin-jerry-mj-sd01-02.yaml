@@ -219,6 +219,7 @@ switch:
     name: "Relay"
     pin: GPIO16
     id: relay_power
+    inverted: true
     restore_mode: RESTORE_DEFAULT_ON  # Optional: keep iFan04 powered on by default
 
 # https://esphome.io/components/output/gpio.html
