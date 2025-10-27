@@ -76,6 +76,7 @@ binary_sensor:
 
   - platform: gpio
     pin: GPIO0
+    inverted: true
     name: "Up Button"
     on_press:
       - homeassistant.service:
@@ -85,6 +86,7 @@ binary_sensor:
 
   - platform: gpio
     pin: GPIO1
+    inverted: true
     name: "Down Button"
     on_press:
       - homeassistant.service:
