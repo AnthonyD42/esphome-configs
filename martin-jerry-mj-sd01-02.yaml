@@ -98,10 +98,20 @@ binary_sensor:
       inverted: true
     name: "Up Button"
     on_press:
-      - homeassistant.service:
-          service: fan.increase_speed
-          data:
-            entity_id: ${fan_entity}
+      - if:
+          condition:
+            binary_sensor.is_off: ha_fan_state
+          then:
+            - homeassistant.service:
+                service: fan.set_percentage
+                data:
+                  entity_id: ${fan_entity}
+                  percentage: 33
+          else:
+            - homeassistant.service:
+                service: fan.increase_speed
+                data:
+                  entity_id: ${fan_entity}
 
   - platform: gpio
     pin:
@@ -110,10 +120,21 @@ binary_sensor:
       inverted: true
     name: "Down Button"
     on_press:
-      - homeassistant.service:
-          service: fan.decrease_speed
-          data:
-            entity_id: ${fan_entity}
+      - if:
+          condition:
+            and:
+              - binary_sensor.is_on: ha_fan_state
+              - lambda: 'return (int)id(ha_fan_pct).state == 33;'
+          then:
+            - homeassistant.service:
+                service: fan.turn_off
+                data:
+                  entity_id: ${fan_entity}
+          else:
+            - homeassistant.service:
+                service: fan.decrease_speed
+                data:
+                  entity_id: ${fan_entity}
 
 # --- Outputs (LEDs + Relay) ---
 output:
@@ -165,7 +186,6 @@ interval:
           // Only light LEDs if fan is ON
           if (id(ha_fan_state).state) {
             int pct = (int) id(ha_fan_pct).state;
-
             if (pct == 33) {
               id(relay_led).turn_on();
             } else if (pct == 66) {

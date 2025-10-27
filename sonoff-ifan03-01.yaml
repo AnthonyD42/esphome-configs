@@ -315,7 +315,7 @@ script:
           else:
             - if:
                 condition:
-                  lambda: return (id(fan_boost_enabled).state && (id(last_fan_speed) == 0));
+                  lambda: return (id(fan_boost_enabled).state && (id(last_fan_speed) != 3));
                 then:
                   - output.turn_off: fan_relay_1
                   - output.turn_off: fan_relay_2
