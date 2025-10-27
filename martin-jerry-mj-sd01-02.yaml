@@ -168,11 +168,13 @@ interval:
     then:
       - if:
           condition:
-            binary_sensor.is_on: ha_light_state
+            and:
+              - binary_sensor.is_off: ha_light_state
+              - binary_sensor.is_off: ha_fan_state
           then:
-            - output.turn_off: red_led   # Light ON → LED OFF
+            - output.turn_on: red_led    # Both Light and Fan OFF → LED ON (night light)
           else:
-            - output.turn_on: red_led    # Light OFF → LED ON (night light)
+            - output.turn_off: red_led   # Either Light or Fan ON → LED OFF
   - interval: 1s
     then:
       - lambda: |-
