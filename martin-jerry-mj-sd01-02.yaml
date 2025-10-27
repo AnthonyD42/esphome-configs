@@ -66,7 +66,9 @@ sensor:
 
 binary_sensor:
   - platform: gpio
-    pin: GPIO15
+    pin:
+      number: GPIO15
+      mode: INPUT_PULLUP
     name: "Main Button"
     on_press:
       - homeassistant.service:
@@ -75,8 +77,10 @@ binary_sensor:
             entity_id: light.sonoff_ifan03_01_light
 
   - platform: gpio
-    pin: GPIO0
-    inverted: true
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
     name: "Up Button"
     on_press:
       - homeassistant.service:
@@ -85,8 +89,10 @@ binary_sensor:
             entity_id: fan.sonoff_ifan03_01_fan
 
   - platform: gpio
-    pin: GPIO1
-    inverted: true
+    pin:
+      number: GPIO1
+      mode: INPUT_PULLUP
+      inverted: true
     name: "Down Button"
     on_press:
       - homeassistant.service:
