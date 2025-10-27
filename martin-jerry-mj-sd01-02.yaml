@@ -120,21 +120,27 @@ output:
   - platform: gpio
     pin: GPIO4
     id: red_led
+    inverted: true
   - platform: gpio
     pin: GPIO16
     id: relay_led
+    inverted: true
   - platform: gpio
     pin: GPIO14
     id: led2
+    inverted: true
   - platform: gpio
     pin: GPIO12
     id: led3
+    inverted: true
   - platform: gpio
     pin: GPIO5
     id: led4
+    inverted: true
   - platform: gpio
     pin: GPIO3
     id: led5
+    inverted: true
 
 interval:
   - interval: 1s
