@@ -62,34 +62,27 @@ web_server:
 # https://esphome.io/components/logger
 logger:
 
+# Mirror the HA light state into ESPHome
+homeassistant:
+
 sensor:
   - platform: wifi_signal
     name: "WiFi Signal"
     update_interval: 60s
-
-# --- Outputs (LEDs + Relay) ---
-output:
-  - platform: gpio
-    pin: GPIO4
-    id: red_led
-  - platform: gpio
-    pin: GPIO16
-    id: relay_led
-  - platform: gpio
-    pin: GPIO14
-    id: led2
-  - platform: gpio
-    pin: GPIO12
-    id: led3
-  - platform: gpio
-    pin: GPIO5
-    id: led4
-  - platform: gpio
-    pin: GPIO3
-    id: led5
+  - platform: homeassistant
+    id: ha_fan_pct
+    entity_id: ${fan_entity}
+    attribute: percentage
 
 # --- Buttons ---
 binary_sensor:
+  - platform: homeassistant
+    id: ha_light_state
+    entity_id: ${light_entity}
+  - platform: homeassistant
+    id: ha_fan_state
+    entity_id: ${fan_entity}
+
   - platform: gpio
     pin:
       number: GPIO15
@@ -125,41 +118,64 @@ binary_sensor:
           data:
             entity_id: ${fan_entity}
 
-# Subscribe and Sync LEDs with Home Assistant states
-homeassistant:
-  on_event:
-    - event: state_changed
-      then:
-        - lambda: |-
-            // Light LED (night-light behavior)
-            if (x["entity_id"] == "${light_entity}") {
-              if (x["new_state"]["state"] == "on") {
-                id(red_led).turn_off();
-              } else {
-                id(red_led).turn_on();
-              }
-            }
+# --- Outputs (LEDs + Relay) ---
+output:
+  - platform: gpio
+    pin: GPIO4
+    id: red_led
+  - platform: gpio
+    pin: GPIO16
+    id: relay_led
+  - platform: gpio
+    pin: GPIO14
+    id: led2
+  - platform: gpio
+    pin: GPIO12
+    id: led3
+  - platform: gpio
+    pin: GPIO5
+    id: led4
+  - platform: gpio
+    pin: GPIO3
+    id: led5
 
-            // Fan LEDs
-            if (x["entity_id"] == "${fan_entity}") {
-              int pct = atoi(x["new_state"]["attributes"]["percentage"]);
-              id(relay_led).turn_off();
-              id(led2).turn_off();
-              id(led3).turn_off();
-              id(led4).turn_off();
-              id(led5).turn_off();
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: ha_light_state
+          then:
+            - output.turn_off: red_led   # Light ON → LED OFF
+          else:
+            - output.turn_on: red_led    # Light OFF → LED ON (night light)
+  - interval: 1s
+    then:
+      - lambda: |-
+          // Clear all LEDs first
+          id(relay_led).turn_off();
+          id(led2).turn_off();
+          id(led3).turn_off();
+          id(led4).turn_off();
+          id(led5).turn_off();
 
-              if (pct == 33) {
-                id(relay_led).turn_on();
-              } else if (pct == 66) {
-                id(relay_led).turn_on();
-                id(led2).turn_on();
-                id(led3).turn_on();
-              } else if (pct == 100) {
-                id(relay_led).turn_on();
-                id(led2).turn_on();
-                id(led3).turn_on();
-                id(led4).turn_on();
-                id(led5).turn_on();
-              }
+          // Only light LEDs if fan is ON
+          if (id(ha_fan_state).state) {
+            int pct = (int) id(ha_fan_pct).state;
+
+            if (pct == 33) {
+              id(relay_led).turn_on();
+            } else if (pct == 66) {
+              id(relay_led).turn_on();
+              id(led2).turn_on();
+              id(led3).turn_on();
+            } else if (pct == 100) {
+              id(relay_led).turn_on();
+              id(led2).turn_on();
+              id(led3).turn_on();
+              id(led4).turn_on();
+              id(led5).turn_on();
             }
+          }
+
+
