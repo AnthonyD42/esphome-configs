@@ -17,12 +17,12 @@
 substitutions:
   project: Using MJ-SD01 Dimmer 02 to control iFan03
   location: Office
-  device_name: mj_sd01_dimmer_02 # hostname & entity_id
+  name: mj_sd01_dimmer_02 # hostname & entity_id
   friendly_name: MJ-SD01 Dimmer 02 # Displayed in HA frontend
 
 # https://esphome.io/components/esphome
 esphome:
-  device_name: ${device_name}
+  name: ${name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
 
