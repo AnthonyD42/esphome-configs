@@ -32,22 +32,20 @@ esphome:
           condition:
             lambda: 'return id(ifan_light_on).state;'
           then:
-            - light.turn_on: led_main_light
+            - light.turn_off: led_red_light
           else:
-            - light.turn_off: led_main_light
+            - light.turn_on: led_red_light
       - if:
           condition:
             # lambda: 'return id(ifan_fan_speed).state == "low";' 
             lambda: 'return id(ifan_fan_speed).state == 1.0;' 
           then:
-            - light.turn_on: led_1_light
+            - light.turn_on: led_2_light
       - if:
           condition:
             # lambda: 'return id(ifan_fan_speed).state == "medium";'
             lambda: 'return id(ifan_fan_speed).state == 2.0;'
           then:
-            - light.turn_on:
-                id: led_1_light
             - light.turn_on:
                 id: led_2_light
             - light.turn_on:
@@ -57,8 +55,6 @@ esphome:
             # lambda: 'return id(ifan_fan_speed).state == "high";'
             lambda: 'return id(ifan_fan_speed).state == 1.0;'
           then:
-            - light.turn_on:
-                id: led_1_light
             - light.turn_on:
                 id: led_2_light
             - light.turn_on:
@@ -182,20 +178,20 @@ binary_sensor:
     id: ifan_light_on
     on_press:
       then:
-        - light.turn_on: led_main_light
+        - light.turn_on: led_red_light
     on_release:
       then:
-        - light.turn_off: led_main_light
+        - light.turn_off: led_red_light
 
 light:
   - platform: binary
-    name: "LED Main"
-    output: led_main
-    id: led_main_light
-  - platform: binary
-    name: "LED 1"
-    output: led_1
-    id: led_1_light
+    name: "LED Red"
+    output: led_red
+    id: led_red_light
+  # - platform: binary
+  #   name: "LED 1"
+  #   output: led_1
+  #   id: led_1_light
   - platform: binary
     name: "LED 2"
     output: led_2
@@ -225,11 +221,12 @@ switch:
 # https://esphome.io/components/output/gpio.html
 output:
   - platform: gpio
-    id: led_main
-    pin: GPIO4  # Main LED
-  - platform: gpio
-    id: led_1
-    pin: GPIO13 # LED 1 (PWM output to dimmer)
+    id: led_red
+    pin: GPIO4  # Red LED
+    inverted: true
+  # - platform: gpio
+  #   id: led_1
+  #   pin: GPIO13 # LED 1 (PWM output to dimmer)
   - platform: gpio
     id: led_2
     pin: GPIO14 # LED 2
