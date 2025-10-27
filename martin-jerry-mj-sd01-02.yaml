@@ -106,7 +106,7 @@ binary_sensor:
                 service: fan.set_percentage
                 data:
                   entity_id: ${fan_entity}
-                  percentage: 33
+                  percentage: '33'
           else:
             - homeassistant.service:
                 service: fan.increase_speed
