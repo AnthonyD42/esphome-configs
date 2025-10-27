@@ -62,9 +62,6 @@ web_server:
 # https://esphome.io/components/logger
 logger:
 
-# Mirror the HA light state into ESPHome
-homeassistant:
-
 sensor:
   - platform: wifi_signal
     name: "WiFi Signal"
