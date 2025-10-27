@@ -111,18 +111,3 @@ output:
   - platform: gpio
     pin: GPIO3
     id: led5
-
-script:
-  cycle_fan_speed:
-    sequence:
-      - service: fan.set_percentage
-        target:
-          entity_id: fan.sonoff_ifan03_01_fan
-        data_template:
-          percentage: >
-            {% set speed = state_attr('fan.sonoff_ifan03_01_fan', 'percentage') | int %}
-            {% if speed == 0 %} 33
-            {% elif speed == 33 %} 66
-            {% elif speed == 66 %} 100
-            {% else %} 0
-            {% endif %}
