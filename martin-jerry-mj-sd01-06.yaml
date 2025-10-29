@@ -15,11 +15,11 @@
 
 # https://esphome.io/guides/configuration-types.html#substitutions
 substitutions:
-  location: Aubrey's Room
-  device_name: mj_sd01_dimmer_04 # hostname & entity_id
-  friendly_name: MJ-SD01 Dimmer 04 # Displayed in HA frontend
-  fan_entity: fan.sonoff_ifan04_02_fan
-  light_entity: light.sonoff_ifan04_02_light
+  location: Alivia's Room
+  device_name: mj_sd01_dimmer_06 # hostname & entity_id
+  friendly_name: MJ-SD01 Dimmer 06 # Displayed in HA frontend
+  fan_entity: fan.sonoff_ifan04_04_fan
+  light_entity: light.sonoff_ifan04_04_light
 
 
 # https://esphome.io/components/esphome
