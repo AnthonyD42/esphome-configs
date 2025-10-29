@@ -59,7 +59,7 @@ switch:
     name: "${friendly_name} Switch1"
     id: "${device_name}_switch1"
     pin: GPIO14
-    restore_mode: "RESTORE_DEFAULT_ON"
+    restore_mode: "RESTORE_DEFAULT_OFF"
     on_turn_on:
       - switch.turn_on: led_2
     on_turn_off:
@@ -68,7 +68,7 @@ switch:
     name: "${friendly_name} Switch2"
     id: "${device_name}_switch2"
     pin: GPIO12
-    restore_mode: "RESTORE_DEFAULT_ON"
+    restore_mode: "RESTORE_DEFAULT_OFF"
     on_turn_on:
       - switch.turn_on: led_3
     on_turn_off:
@@ -77,7 +77,7 @@ switch:
     name: "${friendly_name} Switch3"
     id: "${device_name}_switch3"
     pin: GPIO13
-    restore_mode: "RESTORE_DEFAULT_ON"
+    restore_mode: "RESTORE_DEFAULT_OFF"
     on_turn_on:
       - switch.turn_on: led_4
     on_turn_off:
@@ -86,7 +86,7 @@ switch:
     name: "${friendly_name} usb"
     id: "${device_name}_usb"
     pin: GPIO05
-    restore_mode: "RESTORE_DEFAULT_ON"
+    restore_mode: "RESTORE_DEFAULT_OFF"
     on_turn_on:
       - switch.turn_on: led_1
     on_turn_off:
