@@ -1,0 +1,205 @@
+# Light dimmer
+# https://devices.esphome.io/devices/MJ-SJ01
+
+# GPI Mappings
+# GPIO0 - Up button (input, pullup, inverted)
+# GPIO1 - Down button (input, pullup, inverted)
+# GPIO3 - LED 5 (output, inverted)
+# GPIO4 - Status LED Red (output, inverted)
+# GPIO5 - LED 4 (output, inverted)
+# GPIO12 - LED 3 (output, inverted)
+# GPIO13 - PWM output to dimmer (output, esp8266_pwm)
+# GPIO14 - LED 2 (output, inverted)
+# GPIO15 - Main button (input, pullup)
+# GPIO16 - Relay control (output, inverted)
+
+# https://esphome.io/guides/configuration-types.html#substitutions
+substitutions:
+  location: Alivia's Room
+  device_name: mj_sd01_dimmer_06 # hostname & entity_id
+  friendly_name: MJ-SD01 Dimmer 06 # Displayed in HA frontend
+  fan_entity: fan.sonoff_ifan04_04_fan
+  light_entity: light.sonoff_ifan04_04_light
+
+
+# https://esphome.io/components/esphome
+esphome:
+  name: ${device_name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+
+# https://esphome.io/components/esp8266.html  
+esp8266:
+  board: esp01_1m
+
+# https://esphome.io/components/api
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# https://esphome.io/components/ota
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# https://esphome.io/components/wifi
+wifi:  
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  ap:
+    ssid: ${friendly_name} AP
+    password: !secret ap_password
+
+captive_portal:
+
+# https://esphome.io/components/web_server.html
+web_server:
+  # port: 80
+  # Can cause high memory usage on ESP8266, enable as needed
+
+# https://esphome.io/components/logger
+logger:
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+  - platform: homeassistant
+    id: ha_fan_pct
+    entity_id: ${fan_entity}
+    attribute: percentage
+
+# --- Buttons ---
+binary_sensor:
+  - platform: homeassistant
+    id: ha_light_state
+    entity_id: ${light_entity}
+  - platform: homeassistant
+    id: ha_fan_state
+    entity_id: ${fan_entity}
+
+  - platform: gpio
+    pin:
+      number: GPIO15
+      mode: INPUT_PULLUP
+    name: "Main Button"
+    on_press:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: ${light_entity}
+
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Up Button"
+    on_press:
+      - if:
+          condition:
+            binary_sensor.is_off: ha_fan_state
+          then:
+            - homeassistant.service:
+                service: fan.set_percentage
+                data:
+                  entity_id: ${fan_entity}
+                  percentage: '33'
+          else:
+            - homeassistant.service:
+                service: fan.increase_speed
+                data:
+                  entity_id: ${fan_entity}
+
+  - platform: gpio
+    pin:
+      number: GPIO1
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Down Button"
+    on_press:
+      - if:
+          condition:
+            and:
+              - binary_sensor.is_on: ha_fan_state
+              - lambda: 'return (int)id(ha_fan_pct).state == 33;'
+          then:
+            - homeassistant.service:
+                service: fan.turn_off
+                data:
+                  entity_id: ${fan_entity}
+          else:
+            - homeassistant.service:
+                service: fan.decrease_speed
+                data:
+                  entity_id: ${fan_entity}
+
+# --- Outputs (LEDs + Relay) ---
+output:
+  - platform: gpio
+    pin: GPIO4
+    id: red_led
+    inverted: true
+  - platform: gpio
+    pin: GPIO16
+    id: relay_led
+    inverted: true
+  - platform: gpio
+    pin: GPIO14
+    id: led2
+    inverted: true
+  - platform: gpio
+    pin: GPIO12
+    id: led3
+    inverted: true
+  - platform: gpio
+    pin: GPIO5
+    id: led4
+    inverted: true
+  - platform: gpio
+    pin: GPIO3
+    id: led5
+    inverted: true
+
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            and:
+              - binary_sensor.is_off: ha_light_state
+              - binary_sensor.is_off: ha_fan_state
+          then:
+            - output.turn_on: red_led    # Both Light and Fan OFF → LED ON (night light)
+          else:
+            - output.turn_off: red_led   # Either Light or Fan ON → LED OFF
+  - interval: 1s
+    then:
+      - lambda: |-
+          // Clear all LEDs first
+          id(relay_led).turn_off();
+          id(led2).turn_off();
+          id(led3).turn_off();
+          id(led4).turn_off();
+          id(led5).turn_off();
+
+          // Only light LEDs if fan is ON
+          if (id(ha_fan_state).state) {
+            int pct = (int) id(ha_fan_pct).state;
+            if (pct == 33) {
+              id(relay_led).turn_on();
+            } else if (pct == 66) {
+              id(relay_led).turn_on();
+              id(led2).turn_on();
+              id(led3).turn_on();
+            } else if (pct == 100) {
+              id(relay_led).turn_on();
+              id(led2).turn_on();
+              id(led3).turn_on();
+              id(led4).turn_on();
+              id(led5).turn_on();
+            }
+          }
+
+
