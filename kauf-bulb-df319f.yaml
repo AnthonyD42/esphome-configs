@@ -6,9 +6,9 @@ packages:
   Kauf.RGBWW: github://KaufHA/kauf-rgbww-bulbs/kauf-bulb.yaml
 
 esphome:
-  name: "${name}"
+  name: ${name}
   name_add_mac_suffix: false
-  friendly_name: "${friendly_name}"
+  friendly_name: ${friendly_name}
 
 # Enable logging
 logger:
@@ -35,4 +35,6 @@ wifi:
 captive_portal:
 
 web_server:
+  port: 80
+  version: 3
 

@@ -43,6 +43,8 @@ logger:
 captive_portal:
 
 web_server:
+  port: 80
+  version: 3
 
 binary_sensor:
   # Connected to HA

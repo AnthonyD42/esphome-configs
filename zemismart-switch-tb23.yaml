@@ -41,8 +41,10 @@ wifi:
 
 captive_portal:
 
+# https://esphome.io/components/web_server.html
 web_server:
-  # https://esphome.io/components/web_server.html
+  port: 80
+  version: 3
 
 text_sensor:
   - platform: version

@@ -53,8 +53,8 @@ captive_portal:
 
 # https://esphome.io/components/web_server.html
 web_server:
-  # port: 80
-  # Can cause high memory usage on ESP8266, enable as needed
+  port: 80
+  version: 3
 
 # https://esphome.io/components/logger
 logger:
