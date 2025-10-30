@@ -182,6 +182,7 @@ light:
     name: 'Light'
     id: light_comp
     output: light_relay
+    restore_mode: RESTORE_DEFAULT_OFF
 
 fan:
   - platform: speed

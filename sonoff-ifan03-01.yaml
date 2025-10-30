@@ -1,4 +1,5 @@
 substitutions:
+  location: Office
   device_name: sonoff_ifan03_01
   friendly_name: Sonoff iFan03 01
   fan_startup_boost_time: 5s
@@ -184,6 +185,7 @@ light:
     name: 'Light'
     id: light_comp
     output: light_relay
+    restore_mode: RESTORE_DEFAULT_OFF
 
 fan:
   - platform: speed
