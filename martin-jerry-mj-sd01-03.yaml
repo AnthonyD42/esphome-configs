@@ -3,6 +3,7 @@
 
 substitutions:
   #   # https://esphome.io/guides/configuration-types.html#substitutions
+  location: Brooklyn's Room
   device_name: mj_sd01_dimmer_03 # hostname & entity_id
   friendly_name: MJ-SD01 Dimmer 03 # Displayed in HA frontend
   # ip_address: !secret martin_jerry_mj_sd01_ip # use /config/esphome/secrets.yaml
@@ -18,6 +19,7 @@ substitutions:
   # buttons.
   steps: "10"
   gamma_correct: "2.0" # Default gamma of 2.8 is generally too high.
+  led_entity: switch.gosund_wp3_plug_01
 
 # https://esphome.io/components/esphome
 esphome:
@@ -167,7 +169,7 @@ binary_sensor:
           - homeassistant.service:
               service: homeassistant.toggle
               data:
-                entity_id: switch.gosund_wp3_plug_01
+                entity_id: ${led_entity}
 
   
   # - platform: gpio

@@ -3,6 +3,7 @@
 
 substitutions:
   #   # https://esphome.io/guides/configuration-types.html#substitutions
+  location: Dining Room
   device_name: mj_sd01_dimmer_07 # hostname & entity_id
   friendly_name: MJ-SD01 Dimmer 07 # Displayed in HA frontend
   # ip_address: !secret martin_jerry_mj_sd01_ip # use /config/esphome/secrets.yaml

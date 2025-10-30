@@ -15,12 +15,12 @@
 
 # https://esphome.io/guides/configuration-types.html#substitutions
 substitutions:
-  project: Using MJ-SD01 Dimmer 02 to control iFan03
   location: Office
   name: mj_sd01_dimmer_02 # hostname & entity_id
   friendly_name: MJ-SD01 Dimmer 02 # Displayed in HA frontend
   fan_entity: fan.sonoff_ifan03_01_fan
   light_entity: light.sonoff_ifan03_01_light
+  led_entity: ""
 
 
 # https://esphome.io/components/esphome

@@ -2,6 +2,7 @@
 # https://devices.esphome.io/devices/MJ-SJ01
 
 substitutions:
+  location: Steampunk Lamp
   #   # https://esphome.io/guides/configuration-types.html#substitutions
   device_name: mj_sd01_dimmer_01 # hostname & entity_id
   friendly_name: MJ-SD01 Dimmer 01 # Displayed in HA frontend

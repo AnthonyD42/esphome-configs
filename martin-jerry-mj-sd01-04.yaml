@@ -20,6 +20,7 @@ substitutions:
   friendly_name: MJ-SD01 Dimmer 04 # Displayed in HA frontend
   fan_entity: fan.sonoff_ifan04_02_fan
   light_entity: light.sonoff_ifan04_02_light
+  led_entity: switch.gosund_wp3_plug_03
 
 
 # https://esphome.io/components/esphome
@@ -79,18 +80,47 @@ binary_sensor:
     id: ha_fan_state
     entity_id: ${fan_entity}
 
+  # - platform: gpio
+  #   pin:
+  #     number: GPIO15
+  #     mode: INPUT_PULLUP
+  #   name: "Main Button"
+  #   on_press:
+  #     - homeassistant.service:
+  #         service: light.toggle
+  #         data:
+  #           entity_id: ${light_entity}
+
   - platform: gpio
+    # https://esphome.io/components/binary_sensor/gpio.html
+    id: main_button
     pin:
       number: GPIO15
       mode: INPUT_PULLUP
     name: "Main Button"
-    on_press:
-      - homeassistant.service:
-          service: light.toggle
-          data:
-            entity_id: ${light_entity}
+    on_multi_click:
+      - timing:
+          - ON for at most 1s
+          - OFF for at least 0.5s
+        then:
+          - homeassistant.service:
+              service: light.toggle
+              data:
+                entity_id: ${light_entity}
+
+      - timing:
+          - ON for at most 1s
+          - OFF for at most 1s
+          - ON for at most 1s
+          - OFF for at least 0.2s
+        then:
+          - homeassistant.service:
+              service: homeassistant.toggle
+              data:
+                entity_id: ${led_entity}
 
   - platform: gpio
+    id: up_button
     pin:
       number: GPIO0
       mode: INPUT_PULLUP
@@ -113,6 +143,7 @@ binary_sensor:
                   entity_id: ${fan_entity}
 
   - platform: gpio
+    id: down_button
     pin:
       number: GPIO1
       mode: INPUT_PULLUP
