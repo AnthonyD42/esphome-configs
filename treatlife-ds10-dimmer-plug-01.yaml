@@ -99,6 +99,7 @@ light:
     switch_datapoint: 1
     min_value: 100
     max_value: 1000
+
 #   - platform: "tuya"
 #     name: ${device_friendly_name} Outlet 2
 #     id: Outlet2
@@ -116,6 +117,16 @@ select:
       0: LED # Index 0
       1: Incandescent # Index 1
       2: Halogen # Index 2
+
+number:
+  - platform: "tuya"
+    name: "Minimum Brightness"
+    id: min_brightness
+    number_datapoint: 3
+    min_value: 10
+    max_value: 1000
+    step: 1
+
 
 # You need to adjust it manually: in most cases, use either 9600 or 115200
 # W: UPK: Missing mapping for DP 1, BOOL(rw), switch_led_1 (开关1)
