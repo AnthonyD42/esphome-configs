@@ -43,7 +43,6 @@ ota:
     password: !secret ota_password
 
 wifi:
-  use_address: 192.168.30.242
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
@@ -112,18 +111,23 @@ select:
   - platform: "tuya"
     id: "dimmer_mode"
     name: Dimming Mode
-    enum_datapoint: 10
+    enum_datapoint: 4
     options:
       0: LED # Index 0
       1: Incandescent # Index 1
       2: Halogen # Index 2
-#1 - switch 1
-#2 - dimmer 1 = 763
-#3 - dimmer 1 - brightness min = 100 Diming Range 10%= 100, 100%=1000
-#7 - switch 2
-#8 - dimmer 2 = 763
-#9 - dimmer 2 - brightness min = 100 Diming Range 10%= 100, 100%=1000
-#10 - dimming mode = LED, incandescent, halogen
+
+# You need to adjust it manually: in most cases, use either 9600 or 115200
+# W: UPK: Missing mapping for DP 1, BOOL(rw), switch_led_1 (开关1)
+# W: UPK: Missing mapping for DP 2, VALUE(rw), bright_value_1 (亮度值)
+# W: UPK: Missing mapping for DP 3, VALUE(rw), brightness_min_1 (最小亮度1)
+# W: UPK: Missing mapping for DP 4, ENUM(rw), led_type_1 (光源类型1)
+# W: UPK: Converter 'base' couldn't process DP 101, RAW(rw), wake_up (wake-up)
+# W: UPK: Missing mapping for DP 102, VALUE(rw), count_down (count_down)
+# W: UPK: Missing mapping for DP 103, VALUE(rw), bright_value_3 (亮度值（关灯时下发）)
+# W: UPK: Missing mapping for DP 104, VALUE(rw), indicator (指示灯控制)
+# W: UPK: Converter 'base' couldn't process DP 105, RAW(rw), random_time (离家模式)
+
 
 # # # The below items are settings imported from LibreTiny
 # switch:

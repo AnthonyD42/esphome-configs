@@ -31,7 +31,6 @@ ota:
     password: !secret ota_password
 
 wifi:
-  use_address: 192.168.30.242
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
