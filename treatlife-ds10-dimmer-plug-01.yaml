@@ -14,6 +14,8 @@ esphome:
     priority: 600
     then:
       lambda: |-
+        // seed the C PRNG and set initial brightness
+        srand((unsigned int) ::millis());
         id(Outlet1).remote_values.set_brightness(100);
         // id(Outlet2).remote_values.set_brightness(100);
 
@@ -21,8 +23,11 @@ bk72xx:
   board: cb3s
 
 logger:
-  level: DEBUG
+  level: INFO  # Reduced from DEBUG to minimize spooky mode spam
   baud_rate: 0
+  logs:
+    light: WARN  # Only log actual errors for light component
+    api: WARN    # Only log connection issues
 
 web_server:
   port: 80
@@ -55,6 +60,26 @@ time:
   - platform: homeassistant
     id: homeassistant_time
 
+globals:
+  - id: spooky_mode
+    type: bool
+    initial_value: 'false'
+  - id: spooky_min_pct
+    type: int
+    initial_value: '10'
+  - id: spooky_max_pct
+    type: int
+    initial_value: '80'
+  - id: spooky_interval_ms
+    type: int
+    initial_value: '1000'
+  - id: last_spooky_pct
+    type: int
+    initial_value: '-1'
+  - id: next_spooky_pct
+    type: int
+    initial_value: '0'
+
 button:
   - platform: restart
     name: Restart
@@ -62,9 +87,6 @@ button:
 text_sensor:
   - platform: version
     name: Version
-  - platform: debug
-    reset_reason:
-      name: Reset Reason
   - platform: libretiny
     version:
       name: LibreTiny Version
@@ -74,8 +96,9 @@ uart:
   tx_pin: TX1
   baud_rate: 115200
 
-debug:
-  update_interval: 30s
+# Disabled debug updates to reduce memory usage during spooky mode
+# debug:
+#   update_interval: 30s
 
 # DPIDs processed from schema model: 000004cn7x
 tuya:
@@ -84,9 +107,10 @@ tuya:
 sensor:
   - platform: wifi_signal
     name: Wifi Signal
-    update_interval: 60s
+    update_interval: 300s  # Changed from 60s to 5min to reduce overhead
   - platform: uptime
     name: Uptime
+    update_interval: 300s  # Added 5min interval (was using default)
     unit_of_measurement: minutes
     filters:
       - lambda: return x / 60.0;
@@ -118,6 +142,23 @@ select:
       1: Incandescent # Index 1
       2: Halogen # Index 2
 
+  # Local UI select to pick normal vs spooky effect (appears in web UI)
+  - platform: template
+    name: "Effect Mode"
+    id: effect_mode
+    optimistic: true
+    options:
+      - "Normal"
+      - "Spooky"
+    set_action:
+      - lambda: |-
+          // When the user selects Spooky, enable the spooky routine
+          if (x == "Spooky") {
+            id(spooky_mode) = true;
+          } else {
+            id(spooky_mode) = false;
+          }
+
 number:
   - platform: "tuya"
     name: "Minimum Brightness"
@@ -126,6 +167,89 @@ number:
     min_value: 10
     max_value: 1000
     step: 1
+
+  # UI numbers to configure spooky effect range (percent)
+  - platform: template
+    name: "Spooky Minimum Brightness (%)"
+    id: spooky_min_number
+    min_value: 1
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          id(spooky_min_pct) = (int) x;
+    lambda: |-
+      return (float) id(spooky_min_pct);
+
+  - platform: template
+    name: "Spooky Maximum Brightness (%)"
+    id: spooky_max_number
+    min_value: 1
+    max_value: 100
+    step: 1
+    set_action:
+      - lambda: |-
+          id(spooky_max_pct) = (int) x;
+    lambda: |-
+      return (float) id(spooky_max_pct);
+
+  - platform: template
+    name: "Spooky Interval (s)"
+    id: spooky_interval_number
+    min_value: 0.25
+    max_value: 2.0
+    step: 0.1
+    set_action:
+      - lambda: |-
+          // store milliseconds in global
+          int ms = (int) (x * 1000.0);
+          if (ms < 250) ms = 250; // enforce a safer minimum 250ms to avoid overwhelming web server/EventSource
+          id(spooky_interval_ms) = ms;
+    lambda: |-
+      return (float) id(spooky_interval_ms) / 1000.0;
+
+interval:
+  # Base interval runs frequently; an internal timer uses the runtime-configurable
+  # `spooky_interval_ms` to decide when to actually change brightness. This lets
+  # us change the interval from the UI without recompiling.
+  - interval: 200ms
+    then:
+      - if:
+          condition:
+            lambda: |-
+              // Only fire when spooky mode is enabled and the configured
+              // interval has elapsed. Use millis() to track elapsed time.
+              // Compute a candidate brightness and only return true if it's
+              // different from the last sent value. This reduces duplicate
+              // sends and helps avoid stuck EventSource warnings.
+              static unsigned long last = 0;
+              unsigned long now = ::millis();
+              if (!id(spooky_mode)) return false;
+              unsigned long wait = (unsigned long) id(spooky_interval_ms);
+              if (wait < 250) wait = 250;
+              if (now - last < wait) return false;
+
+              int minp = id(spooky_min_pct);
+              int maxp = id(spooky_max_pct);
+              if (minp < 1) minp = 1;
+              if (maxp > 100) maxp = 100;
+              if (minp > maxp) { int t = minp; minp = maxp; maxp = t; }
+              int r = minp + (rand() % (maxp - minp + 1));
+              id(next_spooky_pct) = r;
+              if ((int) id(last_spooky_pct) == r) {
+                // keep waiting for a different value
+                return false;
+              }
+              last = now;
+              return true;
+          then:
+            - light.turn_on:
+                id: Outlet1
+                brightness: !lambda |-
+                  return (float) id(next_spooky_pct) / 100.0;
+            - lambda: |-
+                // record last sent value to avoid repeats
+                id(last_spooky_pct) = id(next_spooky_pct);
 
 
 # You need to adjust it manually: in most cases, use either 9600 or 115200
