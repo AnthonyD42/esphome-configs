@@ -73,7 +73,11 @@ binary_sensor:
       number: GPIO16
       inverted: true
     on_click:
-      - switch.toggle: relay1
+      # - switch.toggle: relay1      
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.shelly_25_02_light_1
       - logger.log: "Button 1 pressed - Toggling Middle Lights"
 
   - platform: gpio
@@ -83,7 +87,11 @@ binary_sensor:
       inverted: true
       mode: INPUT_PULLUP
     on_click:
-      - switch.toggle: relay2
+      # - switch.toggle: relay2     
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.shelly_25_02_light_2
       - logger.log: "Button 2 pressed - Toggling Side Lights"
 
   - platform: gpio
@@ -93,7 +101,11 @@ binary_sensor:
       inverted: true
       mode: INPUT_PULLUP
     on_click:
-      - switch.toggle: relay3
+      - switch.toggle: relay3    
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.shelly_1_01_light
       - logger.log: "Button 3 pressed - Toggling Gas Lights"
       
 switch:
@@ -102,79 +114,78 @@ switch:
     pin: GPIO13
     id: relay1
     restore_mode: ${switch_restore_mode}
-    on_turn_on: 
-      then:
-        - if:
-            condition:
-              lambda: 'return id(shelly_25_02_light_1_state).state = "off";'  # "off"
-            then:
-              - homeassistant.service:
-                  service: light.turn_on
-                  data:
-                    entity_id: light.shelly_25_02_light_1
-    on_turn_off:
-      then:
-        - if:
-            condition:
-              lambda: 'return id(shelly_25_02_light_1_state).state = "on";'  # "on"
-            then:
-              - homeassistant.service:
-                  service: light.turn_off
-                  data:
-                    entity_id: light.shelly_25_02_light_1
-
+    # on_turn_on: 
+    #   then:
+    #     - if:
+    #         condition:
+    #           lambda: 'return id(shelly_25_02_light_1_state).state = "off";'  # "off"
+    #         then:
+    #           - homeassistant.service:
+    #               service: light.turn_on
+    #               data:
+    #                 entity_id: light.shelly_25_02_light_1
+    # on_turn_off:
+    #   then:
+    #     - if:
+    #         condition:
+    #           lambda: 'return id(shelly_25_02_light_1_state).state = "on";'  # "on"
+    #         then:
+    #           - homeassistant.service:
+    #               service: light.turn_off
+    #               data:
+    #                 entity_id: light.shelly_25_02_light_1
 
   - platform: gpio
     name: ${switch2_name} # Side Lights
     pin: GPIO12
     id: relay2
     restore_mode: ${switch_restore_mode}
-    on_turn_on: 
-      then:
-        - if:
-            condition:
-              lambda: 'return id(shelly_25_02_light_2_state).state = "off";'  # "off"
-            then:
-              - homeassistant.service:
-                  service: light.turn_on
-                  data:
-                    entity_id: light.shelly_25_02_light_2
-    on_turn_off:
-      then:
-        - if:
-            condition:
-              lambda: 'return id(shelly_25_02_light_2_state).state = "on";'  # "on"
-            then:
-              - homeassistant.service:
-                  service: light.turn_off
-                  data:
-                    entity_id: light.shelly_25_02_light_2
+    # on_turn_on: 
+    #   then:
+    #     - if:
+    #         condition:
+    #           lambda: 'return id(shelly_25_02_light_2_state).state = "off";'  # "off"
+    #         then:
+    #           - homeassistant.service:
+    #               service: light.turn_on
+    #               data:
+    #                 entity_id: light.shelly_25_02_light_2
+    # on_turn_off:
+    #   then:
+    #     - if:
+    #         condition:
+    #           lambda: 'return id(shelly_25_02_light_2_state).state = "on";'  # "on"
+    #         then:
+    #           - homeassistant.service:
+    #               service: light.turn_off
+    #               data:
+    #                 entity_id: light.shelly_25_02_light_2
 
   - platform: gpio
     name: ${switch3_name} # Gas Lights
     pin: GPIO14
     id: relay3
     restore_mode: ${switch_restore_mode}
-    on_turn_on: 
-      then:
-        - if:
-            condition:
-              lambda: 'return id(shelly_1_01_light_state).state = "off";'  # "off"
-            then:
-              - homeassistant.service:
-                  service: light.turn_on
-                  data:
-                    entity_id: light.shelly_1_01_light
-    on_turn_off: 
-      then:  
-        - if:
-            condition:
-              lambda: 'return id(shelly_1_01_light_state).state = "on";'  # "on"
-            then:
-              - homeassistant.service:
-                  service: light.turn_off
-                  data:
-                    entity_id: light.shelly_1_01_light
+    # on_turn_on: 
+    #   then:
+    #     - if:
+    #         condition:
+    #           lambda: 'return id(shelly_1_01_light_state).state = "off";'  # "off"
+    #         then:
+    #           - homeassistant.service:
+    #               service: light.turn_on
+    #               data:
+    #                 entity_id: light.shelly_1_01_light
+    # on_turn_off: 
+    #   then:  
+    #     - if:
+    #         condition:
+    #           lambda: 'return id(shelly_1_01_light_state).state = "on";'  # "on"
+    #         then:
+    #           - homeassistant.service:
+    #               service: light.turn_off
+    #               data:
+    #                 entity_id: light.shelly_1_01_light
 
 
 light:
