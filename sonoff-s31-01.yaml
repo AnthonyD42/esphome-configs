@@ -71,17 +71,26 @@ sensor:
     current:
       name: "${friendly_name} Current"
       unit_of_measurement: "A"
-      accuracy_decimals: 2
+      accuracy_decimals: 3
       filters:
         - throttle_average: 30s
+        - calibrate_linear:
+            - 0.0 -> 0.013
+            - 0.08208 -> 0.071
+        - lambda: if (x < (0.01 - 0.013)) return 0; else return (x - 0.013);
     voltage:
       name: "${friendly_name} Voltage"
-      accuracy_decimals: 2
+      unit_of_measurement: V
+      accuracy_decimals: 1
       filters:
         - throttle_average: 30s
+        - calibrate_linear:
+          - 0.0 -> 0.0
+          - 123.9 -> 120.0  # Adjust this value based on your local mains voltage
     power:
       name: "${friendly_name} Power"
-      accuracy_decimals: 2
+      unit_of_measurement: W
+      accuracy_decimals: 0
       id: ${device_name}_power
       filters:
         - throttle_average: 30s
@@ -110,7 +119,7 @@ switch:
     name: "${friendly_name} Relay"
     pin: GPIO12
     id: ${device_name}_relay
-    restore_mode: ALWAYS_OFF # Powering the relay may cause damage or instability when the programmer is supplying Vcc.
+    restore_mode: RESTORE_DEFAULT_OFF # Powering the relay may cause damage or instability when the programmer is supplying Vcc.
 
 time:
   - platform: sntp #(required for total_daily_energy)
