@@ -94,6 +94,17 @@ binary_sensor:
               data:
                 entity_id: ${remote_device_02}
 
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
 light:
   - platform: binary
     name: "Light"
