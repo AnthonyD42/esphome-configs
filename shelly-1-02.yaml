@@ -78,10 +78,14 @@ binary_sensor:
           - OFF for at least 0.5s
         then:
           - logger.log: "Single Long Clicked"
-          - homeassistant.service:
-              service: homeassistant.turn_off
+          - homeassistant.event:
+              event: esphome.button_long_pressed
               data:
-                entity_id: ${remote_device_01}
+                button_name: "Main Button"
+          # - homeassistant.service:
+          #     service: homeassistant.turn_off
+          #     data:
+          #       entity_id: ${remote_device_01}
       - timing:
           - ON for at most 1s
           - OFF for at most 1s
@@ -89,10 +93,14 @@ binary_sensor:
           - OFF for at least 0.2s
         then:
           - logger.log: "Double Clicked"
-          - homeassistant.service:
-              service: homeassistant.turn_off
+          - homeassistant.event:
+              event: esphome.button_double_pressed
               data:
-                entity_id: ${remote_device_02}
+                button_name: "Main Button"
+          # - homeassistant.service:
+          #     service: homeassistant.turn_off
+          #     data:
+          #       entity_id: ${remote_device_02}
 
 button:
   - platform: restart
@@ -110,24 +118,24 @@ light:
     name: "Light"
     output: relay_1
     id: light_1
-    on_turn_on: #blue when on
-      - homeassistant.service:
-          service: homeassistant.turn_on
-          data:
-            entity_id: switch.mj_s01_switch_03_blue_led
-      - homeassistant.service:
-          service: homeassistant.turn_off
-          data:
-            entity_id: switch.mj_s01_switch_03_red_led
-    on_turn_off: #red when off
-      - homeassistant.service:
-          service: homeassistant.turn_off
-          data:
-            entity_id: switch.mj_s01_switch_03_blue_led
-      - homeassistant.service:
-          service: homeassistant.turn_on
-          data:
-            entity_id: switch.mj_s01_switch_03_red_led
+    # on_turn_on: #blue when on
+    #   - homeassistant.service:
+    #       service: homeassistant.turn_on
+    #       data:
+    #         entity_id: switch.mj_s01_switch_03_blue_led
+    #   - homeassistant.service:
+    #       service: homeassistant.turn_off
+    #       data:
+    #         entity_id: switch.mj_s01_switch_03_red_led
+    # on_turn_off: #red when off
+    #   - homeassistant.service:
+    #       service: homeassistant.turn_off
+    #       data:
+    #         entity_id: switch.mj_s01_switch_03_blue_led
+    #   - homeassistant.service:
+    #       service: homeassistant.turn_on
+    #       data:
+    #         entity_id: switch.mj_s01_switch_03_red_led
 
 # Device Specific Config
 output:

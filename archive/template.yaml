@@ -87,6 +87,8 @@ sensor:
     update_interval: 60s
     entity_category: diagnostic
 
+# switch:
+
 text_sensor:
   - platform: version
     name: "ESPHome Version"

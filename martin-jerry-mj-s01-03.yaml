@@ -4,6 +4,9 @@
 
 # https://esphome.io/guides/configuration-types.html#substitutions
 substitutions:
+  location: Downstairs Controler for Landing Lights
+  project_name: AnthonyD42.MJ-S01
+  project_version: "1.0"
   device_name: mj_s01_switch_03 # hostname & entity_id
   friendly_name: MJ-S01 Switch 03 # Displayed in HA frontend
   timer_duration: 0min # Duration for auto-off timer, set to "0m" to disable
@@ -13,6 +16,13 @@ esphome:
   name: "${device_name}"
   name_add_mac_suffix: false
   friendly_name: "${friendly_name}"
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
 
 esp8266:
   board: esp01_1m
@@ -44,8 +54,61 @@ web_server:
   port: 80
   version: 3
 
+# https://esphome.io/components/logger
 logger:
-  # https://esphome.io/components/logger
+  level: WARN
+  baud_rate: 0
+
+mdns:
+  disabled: false
+
+binary_sensor:
+  - platform: gpio
+    # https://esphome.io/components/binary_sensor/gpio.html
+    pin:
+      number: GPIO13
+      mode: INPUT_PULLUP
+    name: Main Button
+    internal: True
+    on_press:
+      then:
+        - homeassistant.event:
+            event: esphome.button_pressed
+            data:
+              button_name: "Main Button"
+      # # - switch.toggle: relay # Switch relay is not used in this configuration
+      # - logger.log: "Main Button pressed - Toggling Landing Lights"
+      # - homeassistant.service:
+      #     service: homeassistant.toggle
+      #     data:
+      #       entity_id: light.shelly_1_02_light # Landing Lights
+
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
+script:
+  - id: change_to_blue
+    then:
+      - switch.turn_on: blue_led
+      - switch.turn_off: red_led
+  - id: change_to_red
+    then:
+      - switch.turn_off: blue_led
+      - switch.turn_on: red_led
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
 
 switch: 
 #   # relay output # Switch relay is not used in this configuration
@@ -88,44 +151,7 @@ switch:
     name: Blue LED
     inverted: true
 
-binary_sensor:
-  - platform: gpio
-    # https://esphome.io/components/binary_sensor/gpio.html
-    pin:
-      number: GPIO13
-      mode: INPUT_PULLUP
-    name: Main Button
-    internal: True
-    on_press:
-      # - switch.toggle: relay # Switch relay is not used in this configuration
-      - logger.log: "Main Button pressed - Toggling Landing Lights"
-      - homeassistant.service:
-          service: homeassistant.toggle
-          data:
-            entity_id: light.shelly_1_02_light # Landing Lights
-
-button:
-  - platform: restart
-    id: restart_button
-    name: Restart
-    entity_category: diagnostic
-
 text_sensor:
   - platform: version
-    name: ESPHome Version
-    id: esphome_version
-    hide_timestamp: True
-
-sensor:
-  - platform: wifi_signal
-    name: WiFi Signal
-
-script:
-  - id: change_to_blue
-    then:
-      - switch.turn_on: blue_led
-      - switch.turn_off: red_led
-  - id: change_to_red
-    then:
-      - switch.turn_off: blue_led
-      - switch.turn_on: red_led
+    name: "ESPHome Version"
+    entity_category: diagnostic
