@@ -7,8 +7,6 @@ substitutions:
   project_version: "1.0"
   device_name: shelly_1_02
   friendly_name: Shelly 1 02
-  remote_device_01: switch.mj_s01_switch_12_switch # Long Press - Girls Bathroom Lights
-  remote_device_02: light.mj_sd01_dimmer_01_light # Double Click - Steampunk Lamp
 
 esphome:
   name: ${device_name}
@@ -82,10 +80,6 @@ binary_sensor:
               event: esphome.button_long_pressed
               data:
                 button_name: ${device_name}_button_long_pressed
-          # - homeassistant.service:
-          #     service: homeassistant.turn_off
-          #     data:
-          #       entity_id: ${remote_device_01}
       - timing:
           - ON for at most 1s
           - OFF for at most 1s
@@ -97,10 +91,6 @@ binary_sensor:
               event: esphome.button_double_pressed
               data:
                 button_name: ${device_name}_button_double_pressed
-          # - homeassistant.service:
-          #     service: homeassistant.turn_off
-          #     data:
-          #       entity_id: ${remote_device_02}
 
 button:
   - platform: restart
@@ -118,26 +108,7 @@ light:
     name: "Light"
     output: relay_1
     id: light_1
-    # on_turn_on: #blue when on
-    #   - homeassistant.service:
-    #       service: homeassistant.turn_on
-    #       data:
-    #         entity_id: switch.mj_s01_switch_03_blue_led
-    #   - homeassistant.service:
-    #       service: homeassistant.turn_off
-    #       data:
-    #         entity_id: switch.mj_s01_switch_03_red_led
-    # on_turn_off: #red when off
-    #   - homeassistant.service:
-    #       service: homeassistant.turn_off
-    #       data:
-    #         entity_id: switch.mj_s01_switch_03_blue_led
-    #   - homeassistant.service:
-    #       service: homeassistant.turn_on
-    #       data:
-    #         entity_id: switch.mj_s01_switch_03_red_led
-
-# Device Specific Config
+    
 output:
   - platform: gpio
     pin: GPIO4
