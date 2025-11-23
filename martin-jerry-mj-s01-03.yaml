@@ -75,7 +75,7 @@ binary_sensor:
         - homeassistant.event:
             event: esphome.button_pressed
             data:
-              button_name: "Main Button"
+              button_name: ${device_name}_button_pressed
       # # - switch.toggle: relay # Switch relay is not used in this configuration
       # - logger.log: "Main Button pressed - Toggling Landing Lights"
       # - homeassistant.service:

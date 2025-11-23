@@ -81,7 +81,7 @@ binary_sensor:
           - homeassistant.event:
               event: esphome.button_long_pressed
               data:
-                button_name: "Main Button"
+                button_name: ${device_name}_button_long_pressed
           # - homeassistant.service:
           #     service: homeassistant.turn_off
           #     data:
@@ -96,7 +96,7 @@ binary_sensor:
           - homeassistant.event:
               event: esphome.button_double_pressed
               data:
-                button_name: "Main Button"
+                button_name: ${device_name}_button_double_pressed
           # - homeassistant.service:
           #     service: homeassistant.turn_off
           #     data:
