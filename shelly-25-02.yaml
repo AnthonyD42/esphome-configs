@@ -1,6 +1,9 @@
 # https://devices.esphome.io/devices/Shelly-25
 
 substitutions:
+  location: Garage Gas Lights
+  project_name: AnthonyD42.Shelly 25
+  project_version: "1.0"
   device_name: shelly_25_02
   friendly_name: Shelly 25 02
 
@@ -8,12 +11,16 @@ esphome:
   name: ${device_name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
 
 esp8266:
   board: esp8285
-
-# Enable logging
-logger:
 
 # Enable Home Assistant API
 api:
@@ -34,29 +41,26 @@ wifi:
     ssid: ${friendly_name} AP
     password: !secret ap_password
 
-# Sets up the improv via serial client for Wi-Fi provisioning
-improv_serial:
-# In combination with the `ap` this allows the user
-# to provision wifi credentials to the device.
 captive_portal:
 
+# https://esphome.io/components/web_server.html
 web_server:
   port: 80
   version: 3
+
+# https://esphome.io/components/logger
+logger:
+  level: WARN
+  baud_rate: 0
+
+mdns:
+  disabled: false
 
 i2c:
   sda: GPIO12
   scl: GPIO14
 
-
 binary_sensor:
-  - platform: homeassistant
-    entity_id: switch.zemismart_ks_811_middle_lights # "Middle Lights"
-    id: zemismart_ks_811_middle_lights_state
-  - platform: homeassistant
-    entity_id: switch.zemismart_ks_811_side_lights # Side Lights
-    id: zemismart_ks_811_side_lights_state
-
   - platform: gpio
     pin:
       number: GPIO13
@@ -74,16 +78,42 @@ binary_sensor:
         - light.toggle: light_2
         - logger.log: "Toggled Relay 2"
 
-text_sensor:
-  - platform: version
-    name: "${friendly_name} ESPHome Version"
-    id: "${device_name}_esphome_version"
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
+light:
+  - platform: binary
+    name: "Light 1"
+    output: relay_1
+    id: light_1
+  - platform: binary
+    name: "Light 2"
+    output: relay_2
+    id: light_2
+
+output:
+  - platform: gpio
+    pin:
+      number: GPIO4
+    id: relay_1
+  - platform: gpio
+    pin:
+      number: GPIO15
+    id: relay_2
 
 sensor:
-  # Devices WiFi Signal and Uptime  
   - platform: wifi_signal
     name: "WiFi Signal"
     update_interval: 60s
+    entity_category: diagnostic
 
   - platform: ade7953_i2c
     irq_pin: GPIO16 # Prevent overheating by setting this
@@ -129,63 +159,6 @@ status_led:
     number: GPIO0
     inverted: yes
 
-output:
-  - platform: gpio
-    pin:
-      number: GPIO4
-    id: relay_1
-  - platform: gpio
-    pin:
-      number: GPIO15
-    id: relay_2
-
-light:
-  - platform: binary
-    name: "Light 1"
-    output: relay_1
-    id: light_1
-    on_turn_on:
-      then:
-        - if:
-            condition:
-              lambda: 'return id(zemismart_ks_811_middle_lights_state).state = "off";' # "off"
-            then:
-              - homeassistant.service:
-                  service: switch.turn_on
-                  data:
-                    entity_id: switch.zemismart_ks_811_middle_lights
-    on_turn_off:
-      then:
-        - if:
-            condition:
-              lambda: 'return id(zemismart_ks_811_middle_lights_state).state = "on";' # "on"
-            then:
-              - homeassistant.service:
-                  service: switch.turn_off
-                  data:
-                    entity_id: switch.zemismart_ks_811_middle_lights
-
-  - platform: binary
-    name: "Light 2"
-    output: relay_2
-    id: light_2
-    on_turn_on:
-      then:
-        - if:
-            condition:
-              lambda: 'return id(zemismart_ks_811_side_lights_state).state = "off";' # "off"
-            then:
-              - homeassistant.service:
-                  service: switch.turn_on
-                  data:
-                    entity_id: switch.zemismart_ks_811_side_lights
-    on_turn_off:
-      then:
-        - if:
-            condition:
-              lambda: 'return id(zemismart_ks_811_side_lights_state).state = "on";' # "on"
-            then:
-              - homeassistant.service:
-                  service: switch.turn_off
-                  data:
-                    entity_id: switch.zemismart_ks_811_side_lights
+text_sensor:
+- platform: version
+  name: "ESPHome Version"

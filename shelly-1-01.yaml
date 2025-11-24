@@ -2,6 +2,9 @@
 
 # Garage Gas Lights Project
 substitutions:
+  location: Garage Gas Lights
+  project_name: AnthonyD42.Shelly 1
+  project_version: "1.0"
   device_name: shelly_1_01
   friendly_name: Shelly 1 01
 
@@ -9,12 +12,16 @@ esphome:
   name: ${device_name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
 
 esp8266:
   board: esp01_1m
-
-# To be able to get logs from the device via serial and api.
-logger:
 
 # Enable Home Assistant API
 api:
@@ -35,69 +42,60 @@ wifi:
     ssid: ${friendly_name} AP
     password: !secret ap_password
 
-# Sets up the improv via serial client for Wi-Fi provisioning
-improv_serial: # In combination with the `ap` this allows the user
-
 # to provision wifi credentials to the device.
 captive_portal:
 
+# https://esphome.io/components/web_server.html
 web_server:
   port: 80
   version: 3
 
-binary_sensor:
-- platform: homeassistant
-  entity_id: switch.zemismart_ks_811_gas_lights
-  id: zemismart_ks_811_gas_lights_state
+# https://esphome.io/components/logger
+logger:
+  level: WARN
+  baud_rate: 0
 
+mdns:
+  disabled: false
+
+binary_sensor:
 - platform: gpio
   pin:
     number: GPIO5
-    #mode: INPUT_PULLUP
-    #inverted: True
   name: "Switch"
   on_state:
     # the rotary switch changes from off to on, we do not care about that, only that it changes state and toggles the lights.
     then:
     - light.toggle: light_1
 
-sensor:
-- platform: wifi_signal
-  name: "WiFi Signal"
-  update_interval: 60s
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
 
-text_sensor:
-- platform: version
-  name: "ESPHome Version"
-
-# Device Specific Config
-output:
-- platform: gpio
-  pin: GPIO4
-  id: relay_1
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
 
 light:
 - platform: binary
   name: "Light"
   output: relay_1
   id: light_1
-  on_turn_on:
-    then:
-    - if:
-        condition:
-          lambda: 'return id(zemismart_ks_811_gas_lights_state).state < 0.5;' # "off"
-        then:
-        - homeassistant.service:
-            service: switch.turn_on
-            data:
-              entity_id: switch.zemismart_ks_811_gas_lights
-  on_turn_off:
-    then:
-    - if:
-        condition:
-          lambda: 'return id(zemismart_ks_811_gas_lights_state).state > 0.5;' # "on"
-        then:
-        - homeassistant.service:
-            service: switch.turn_off
-            data:
-              entity_id: switch.zemismart_ks_811_gas_lights
+
+output:
+- platform: gpio
+  pin: GPIO4
+  id: relay_1
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+
+text_sensor:
+- platform: version
+  name: "ESPHome Version"
