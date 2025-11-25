@@ -53,16 +53,30 @@ logger:
 mdns:
   disabled: false
 
-sensor:
-  - platform: wifi_signal
-    name: "${friendly_name} WiFi signal"
-    id: "dryer_sensor_wifi_signal"
-    update_interval: 60s
-  - platform: uptime
-    name: "${friendly_name} Uptime"
-    id: "dryer_sensor_uptime"
-    update_interval: 60s
+# binary_sensor:
 
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
+# light:
+
+# output:
+
+#script:
+
+sensor:       
+  - platform: adc
+    pin: A0
+    id: adc_sensor
+  
   - platform: ct_clamp
     sensor: adc_sensor
     name: "Dryer Apms"
@@ -83,14 +97,11 @@ sensor:
             state: !lambda |-
               if (x > 5) return 2; 
               return 0;
-
 #              if (x > 1) return 1;
 
   - platform: template
     id: dryer_code
     internal: true
-#    filters:
-#      - debounce: 2s
     on_value:
       then:
         - text_sensor.template.publish:
@@ -98,16 +109,23 @@ sensor:
             state: !lambda |-
               if (x == 2) return "Drying";
               return "Idle";
-
 #              if (x == 1) return "Door Open";
 
-              
-  - platform: adc
-    pin: A0
-    id: adc_sensor
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+    icon: "mdi:wifi"
+
+# switch:
 
 text_sensor:
   - platform: template
     name: "Dryer"
     id: dryer
     icon: "mdi:tumble-dryer"
+
+  - platform: version
+    name: "ESPHome Version"
+    entity_category: diagnostic
+    icon: "mdi:information-outline"

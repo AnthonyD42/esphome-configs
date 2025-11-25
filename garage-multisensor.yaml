@@ -1,4 +1,7 @@
 substitutions:
+  location: Garage Multisensor
+  project_name: AnthonyD42.Wemo D1-Mini
+  project_version: "1.0"
   device_name: garage-multisensor
   friendly_name: Garage Multisensor
 
@@ -6,12 +9,16 @@ esphome:
   name: "${device_name}"
   name_add_mac_suffix: false
   friendly_name: "${friendly_name}"
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
 
 esp8266:
   board: nodemcuv2
-  
-# Enable logging
-logger:
 
 # Enable Home Assistant API
 api:
@@ -38,56 +45,18 @@ web_server:
   port: 80
   version: 3
 
+# https://esphome.io/components/logger
+logger:
+  level: WARN
+  baud_rate: 0
+
+mdns:
+  disabled: false
+
 # Device config
 #AHT20 is i2c
 i2c:
   scan: true
-
-text_sensor:
-  - platform: version
-    name: "ESPHome Version"
-
-sensor:
-  - platform: wifi_signal
-    name: "WiFi signal"
-    update_interval: 60s
-  - platform: uptime
-    name: "Uptime"
-    update_interval: 60s
-
-  # Temperatue / Humidity
-  - platform: aht10   #Also for AHT20
-    temperature:
-      name: "Garage Temperature"
-      id: aht10_temperature
-      device_class: temperature
-    humidity:
-      name: "Garage Humidity"
-      id: aht10_humidity
-      device_class: humidity
-    update_interval: 120s
-
-  - platform: template
-    name: "Garage Dew Point"
-    lambda: |-
-        return ((243.5*(log(id(aht10_humidity).state/100)+((17.67*id(aht10_temperature).state)/
-        (243.5+id(aht10_temperature).state)))/(17.67-log(id(aht10_humidity).state/100)-
-        ((17.67*id(aht10_temperature).state)/(243.5+id(aht10_temperature).state)))) * 1.8) + 32;
-    unit_of_measurement: °F
-    update_interval: 120s
-    icon: 'mdi:thermometer-water'
-
- # Analog Light Level
-  # - platform: adc
-  #   pin: A0
-  #   name: "Garage Analog Light Level"
-  #   unit_of_measurement: lux
-  #   device_class: illuminance
-  #   update_interval: 10s
-  #   filters:
-  #   # this is a relative value - not true lux - adjust as needed for your install
-  #     - lambda: |-
-  #         return (2800/x) - 2700;
 
 binary_sensor:
   # RCWL-0516 Motion
@@ -95,13 +64,25 @@ binary_sensor:
     pin: D4
     name: "Garage Motion Front"
     device_class: motion
-    
+    icon: "mdi:motion-sensor"
+
   # # Photoresistor module DO light level
   # - platform: gpio
   #   pin: D7
   #   name: "Garage Digital Light Level"
+  #   device_class: light
 
-# # RGB LED
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
 # light:
 #   - platform: rgb
 #     id: light_1
@@ -111,7 +92,6 @@ binary_sensor:
 #     green: output_component2
 #     blue: output_component3
 
-# # LED output
 # output:
 #   - platform: esp8266_pwm
 #     id: output_component1
@@ -125,8 +105,57 @@ binary_sensor:
 #     id: output_component3
 #     pin: D5
 #     max_power: 80%
+    
+# script:
+
+sensor:
+  # - platform: adc
+  #   pin: A0
+  #   name: "Garage Analog Light Level"
+  #   unit_of_measurement: lux
+  #   device_class: illuminance
+  #   update_interval: 10s
+  #   filters:
+  #   # this is a relative value - not true lux - adjust as needed for your install
+  #     - lambda: |-
+  #         return (2800/x) - 2700;
+
+  - platform: aht10   #Also for AHT20
+    temperature:
+      name: "Garage Temperature"
+      id: aht10_temperature
+      device_class: temperature
+      icon: "mdi:thermometer"
+      unit_of_measurement: "°F"
+    humidity:
+      name: "Garage Humidity"
+      id: aht10_humidity
+      device_class: humidity
+      icon: "mdi:water-percent"
+      unit_of_measurement: "%"
+    update_interval: 120s
+
+  - platform: template
+    name: "Garage Dew Point"
+    lambda: |-
+        return ((243.5*(log(id(aht10_humidity).state/100)+((17.67*id(aht10_temperature).state)/
+        (243.5+id(aht10_temperature).state)))/(17.67-log(id(aht10_humidity).state/100)-
+        ((17.67*id(aht10_temperature).state)/(243.5+id(aht10_temperature).state)))) * 1.8) + 32;
+    unit_of_measurement: °F
+    update_interval: 120s
+    icon: 'mdi:thermometer-water'
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+    icon: "mdi:wifi"
   
-switch:
-  - platform: restart
-    name: "Garage Multisensor Restart"
+# switch:
+
+text_sensor:
+  - platform: version
+    name: "ESPHome Version"
+    entity_category: diagnostic
+    icon: "mdi:information-outline"
   
