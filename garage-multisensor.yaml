@@ -62,7 +62,7 @@ binary_sensor:
   # RCWL-0516 Motion
   - platform: gpio
     pin: D4
-    name: "Garage Motion Front"
+    name: "Garage Motion"
     device_class: motion
     icon: "mdi:motion-sensor"
 
