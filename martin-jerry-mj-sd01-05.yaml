@@ -16,6 +16,8 @@
 # https://esphome.io/guides/configuration-types.html#substitutions
 substitutions:
   location: AJ's Room
+  project_name: AnthonyD42.MJ-SD01
+  project_version: "1.0"
   device_name: mj_sd01_dimmer_05 # hostname & entity_id
   friendly_name: MJ-SD01 Dimmer 05 # Displayed in HA frontend
   fan_entity: fan.sonoff_ifan04_03_fan
@@ -28,10 +30,18 @@ esphome:
   name: ${device_name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
 
 # https://esphome.io/components/esp8266.html  
 esp8266:
   board: esp01_1m
+  restore_from_flash: true
 
 # https://esphome.io/components/api
 api:
@@ -61,36 +71,11 @@ web_server:
 
 # https://esphome.io/components/logger
 logger:
-
-sensor:
-  - platform: wifi_signal
-    name: "WiFi Signal"
-    update_interval: 60s
-  - platform: homeassistant
-    id: ha_fan_pct
-    entity_id: ${fan_entity}
-    attribute: percentage
+  level: WARN
+  baud_rate: 0
 
 # --- Buttons ---
 binary_sensor:
-  - platform: homeassistant
-    id: ha_light_state
-    entity_id: ${light_entity}
-  - platform: homeassistant
-    id: ha_fan_state
-    entity_id: ${fan_entity}
-
-  # - platform: gpio
-  #   pin:
-  #     number: GPIO15
-  #     mode: INPUT_PULLUP
-  #   name: "Main Button"
-  #   on_press:
-  #     - homeassistant.service:
-  #         service: light.toggle
-  #         data:
-  #           entity_id: ${light_entity}
-
   - platform: gpio
     # https://esphome.io/components/binary_sensor/gpio.html
     id: main_button
@@ -103,10 +88,14 @@ binary_sensor:
           - ON for at most 1s
           - OFF for at least 0.5s
         then:
-          - homeassistant.service:
-              service: light.toggle
+          - homeassistant.event:
+              event: esphome.main_button_pressed
               data:
-                entity_id: ${light_entity}
+                button_name: ${device_name}_main_button_pressed
+          # - homeassistant.service:
+          #     service: light.toggle
+          #     data:
+          #       entity_id: ${light_entity}
 
       - timing:
           - ON for at most 1s
@@ -114,10 +103,14 @@ binary_sensor:
           - ON for at most 1s
           - OFF for at least 0.2s
         then:
-          - homeassistant.service:
-              service: homeassistant.toggle
+          - homeassistant.event:
+              event: esphome.main_button_double_pressed
               data:
-                entity_id: ${led_entity}
+                button_name: ${device_name}_main_button_double_pressed
+          # - homeassistant.service:
+          #     service: homeassistant.toggle
+          #     data:
+          #       entity_id: ${led_entity}
 
   - platform: gpio
     id: up_button
@@ -127,20 +120,24 @@ binary_sensor:
       inverted: true
     name: "Up Button"
     on_press:
-      - if:
-          condition:
-            binary_sensor.is_off: ha_fan_state
-          then:
-            - homeassistant.service:
-                service: fan.set_percentage
-                data:
-                  entity_id: ${fan_entity}
-                  percentage: '33'
-          else:
-            - homeassistant.service:
-                service: fan.increase_speed
-                data:
-                  entity_id: ${fan_entity}
+      - homeassistant.event:
+          event: esphome.up_button_pressed
+          data:
+            button_name: ${device_name}_up_button_pressed
+      # - if:
+      #     condition:
+      #       binary_sensor.is_off: ha_fan_state
+      #     then:
+      #       - homeassistant.service:
+      #           service: fan.set_percentage
+      #           data:
+      #             entity_id: ${fan_entity}
+      #             percentage: '33'
+      #     else:
+      #       - homeassistant.service:
+      #           service: fan.increase_speed
+      #           data:
+      #             entity_id: ${fan_entity}
 
   - platform: gpio
     id: down_button
@@ -150,21 +147,70 @@ binary_sensor:
       inverted: true
     name: "Down Button"
     on_press:
-      - if:
-          condition:
-            and:
-              - binary_sensor.is_on: ha_fan_state
-              - lambda: 'return (int)id(ha_fan_pct).state == 33;'
-          then:
-            - homeassistant.service:
-                service: fan.turn_off
-                data:
-                  entity_id: ${fan_entity}
-          else:
-            - homeassistant.service:
-                service: fan.decrease_speed
-                data:
-                  entity_id: ${fan_entity}
+      - homeassistant.event:
+          event: esphome.down_button_pressed
+          data:
+            button_name: ${device_name}_down_button_pressed
+      # - if:
+      #     condition:
+      #       and:
+      #         - binary_sensor.is_on: ha_fan_state
+      #         - lambda: 'return (int)id(ha_fan_pct).state == 33;'
+      #     then:
+      #       - homeassistant.service:
+      #           service: fan.turn_off
+      #           data:
+      #             entity_id: ${fan_entity}
+      #     else:
+      #       - homeassistant.service:
+      #           service: fan.decrease_speed
+      #           data:
+      #             entity_id: ${fan_entity}
+
+  # - platform: homeassistant
+  #   id: ha_light_state
+  #   entity_id: ${light_entity}
+
+  # - platform: homeassistant
+  #   id: ha_fan_state
+  #   entity_id: ${fan_entity}
+
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
+light:
+  - platform: binary
+    id: red_led_light
+    name: "Red LED"
+    output: red_led
+  - platform: binary
+    id: led_1_light
+    name: "LED 1"
+    output: relay_led
+  - platform: binary
+    id: led_2_light
+    name: "LED 2"
+    output: led2
+  - platform: binary
+    id: led_3_light
+    name: "LED 3"
+    output: led3
+  - platform: binary
+    id: led_4_light
+    name: "LED 4"
+    output: led4
+  - platform: binary
+    id: led_5_light
+    name: "LED 5"
+    output: led5
 
 # --- Outputs (LEDs + Relay) ---
 output:
@@ -193,44 +239,57 @@ output:
     id: led5
     inverted: true
 
-interval:
-  - interval: 1s
-    then:
-      - if:
-          condition:
-            and:
-              - binary_sensor.is_off: ha_light_state
-              - binary_sensor.is_off: ha_fan_state
-          then:
-            - output.turn_on: red_led    # Both Light and Fan OFF → LED ON (night light)
-          else:
-            - output.turn_off: red_led   # Either Light or Fan ON → LED OFF
-  - interval: 1s
-    then:
-      - lambda: |-
-          // Clear all LEDs first
-          id(relay_led).turn_off();
-          id(led2).turn_off();
-          id(led3).turn_off();
-          id(led4).turn_off();
-          id(led5).turn_off();
+# interval:
+#   - interval: 1s
+#     then:
+#       - if:
+#           condition:
+#             and:
+#               - binary_sensor.is_off: ha_light_state
+#               - binary_sensor.is_off: ha_fan_state
+#           then:
+#             - output.turn_on: red_led    # Both Light and Fan OFF → LED ON (night light)
+#           else:
+#             - output.turn_off: red_led   # Either Light or Fan ON → LED OFF
+#   - interval: 1s
+#     then:
+#       - lambda: |-
+#           // Clear all LEDs first
+#           id(relay_led).turn_off();
+#           id(led2).turn_off();
+#           id(led3).turn_off();
+#           id(led4).turn_off();
+#           id(led5).turn_off();
 
-          // Only light LEDs if fan is ON
-          if (id(ha_fan_state).state) {
-            int pct = (int) id(ha_fan_pct).state;
-            if (pct == 33) {
-              id(relay_led).turn_on();
-            } else if (pct == 66) {
-              id(relay_led).turn_on();
-              id(led2).turn_on();
-              id(led3).turn_on();
-            } else if (pct == 100) {
-              id(relay_led).turn_on();
-              id(led2).turn_on();
-              id(led3).turn_on();
-              id(led4).turn_on();
-              id(led5).turn_on();
-            }
-          }
+#           // Only light LEDs if fan is ON
+#           if (id(ha_fan_state).state) {
+#             int pct = (int) id(ha_fan_pct).state;
+#             if (pct == 33) {
+#               id(relay_led).turn_on();
+#             } else if (pct == 66) {
+#               id(relay_led).turn_on();
+#               id(led2).turn_on();
+#               id(led3).turn_on();
+#             } else if (pct == 100) {
+#               id(relay_led).turn_on();
+#               id(led2).turn_on();
+#               id(led3).turn_on();
+#               id(led4).turn_on();
+#               id(led5).turn_on();
+#             }
+#           }
 
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+  # - platform: homeassistant
+  #   id: ha_fan_pct
+  #   entity_id: ${fan_entity}
+  #   attribute: percentage
 
+text_sensor:
+  - platform: version
+    name: "ESPHome Version"
+    entity_category: diagnostic

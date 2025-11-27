@@ -1,5 +1,7 @@
 substitutions:
   location: AJ's Room
+  project_name: AnthonyD42.[device_name]
+  project_version: "1.0"
   device_name: sonoff_ifan04_03
   friendly_name: Sonoff iFan04 03
   fan_startup_boost_time: 5s
@@ -27,6 +29,13 @@ external_components:
 esphome:
   name: $device_name
   friendly_name: $friendly_name
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
   on_boot:
     priority: 600
     then:
@@ -280,14 +289,6 @@ ifan_remote:
           then:
             - morse_code.start: $code_rc_unpair
 
-text_sensor:
-  - platform: version
-    name: 'ESPHome Version'
-
-sensor:
-  - platform: wifi_signal
-    name: 'WiFi Signal'
-
 globals:
   - id: last_fan_speed
     type: int
@@ -343,3 +344,18 @@ script:
                   - output.turn_on: fan_relay_3
       - lambda: |-
           id(last_fan_speed) = speed;
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+  # - platform: homeassistant
+  #   id: ha_fan_pct
+  #   entity_id: ${fan_entity}
+  #   attribute: percentage
+
+text_sensor:
+  - platform: version
+    name: "ESPHome Version"
+    entity_category: diagnostic
