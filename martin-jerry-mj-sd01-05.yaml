@@ -30,14 +30,23 @@ api:
   encryption:
     key: !secret api_encryption_key
   # Expose the script as a service to HA
-  services:
-    - service: ${device_name}_update_leds
+  actions:
+    - action: update_leds #${device_name}_
       variables:
-        mode: string
+        my_led_mode: string
       then:
         - script.execute:
             id: update_leds
-            mode: !lambda 'return mode;'
+            mode: !lambda 'return my_led_mode;'
+  # # Expose the script as a service to HA
+  # services:
+  #   - service: ${device_name}_update_leds
+  #     variables:
+  #       mode: string
+  #     then:
+  #       - script.execute:
+  #           id: update_leds
+  #           mode: !lambda 'return mode;'
 
 ota:
   - platform: esphome
@@ -175,7 +184,10 @@ script:
             lambda: 'return mode == "light_on";'
           then:
             - output.turn_off: red_led
-          else:
+      - if:
+          condition:
+            lambda: 'return mode == "light_off";'
+          then:
             - output.turn_on: red_led
 
       - if:

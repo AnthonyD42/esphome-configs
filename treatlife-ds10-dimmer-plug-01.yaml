@@ -1,15 +1,24 @@
 # https://aaronredding.com/esphome-treatlife-smart-dimmer-plug-with-2-sockets-dp12/
 substitutions:
+  location: Outside
+  project_name: AnthonyD42.TreatLife DS10 Dimmer
+  project_version: "1.0"
   name: treatlife-ds10-dimmer-plug-01
   friendly_name: TreatLife DS10 Dimmer Plug 01
   device_description: "Treatlife DP10 Smart Dimmer Plug with 1 Socket"
   icon: mdi:power-socket-us
-  update_interval_wifi: "60s"
 
 esphome:
   name: ${name}
   name_add_mac_suffix: false
   friendly_name: ${friendly_name}
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
   on_boot:
     priority: 600
     then:
@@ -82,11 +91,15 @@ globals:
 
 button:
   - platform: restart
-    name: Restart
+    name: "Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
 
 text_sensor:
   - platform: version
-    name: Version
+    name: ESPHome Version
+    entity_category: diagnostic
+    icon: "mdi:information-outline"
   - platform: libretiny
     version:
       name: LibreTiny Version
@@ -106,14 +119,10 @@ tuya:
 
 sensor:
   - platform: wifi_signal
-    name: Wifi Signal
-    update_interval: 300s  # Changed from 60s to 5min to reduce overhead
-  - platform: uptime
-    name: Uptime
-    update_interval: 300s  # Added 5min interval (was using default)
-    unit_of_measurement: minutes
-    filters:
-      - lambda: return x / 60.0;
+    name: "WiFi Signal"
+    update_interval: 300s
+    entity_category: diagnostic
+    icon: "mdi:wifi"
     
 light:
   - platform: "tuya"

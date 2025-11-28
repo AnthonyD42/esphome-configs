@@ -1,5 +1,65 @@
 # Light dimmer
 # https://devices.esphome.io/devices/MJ-SJ01
+substitutions:
+  location: Office
+  project_name: AnthonyD42.MJ-SD01
+  project_version: "1.0"
+  device_name: mj_sd01_dimmer_02 # hostname & entity_id
+  friendly_name: MJ-SD01 Dimmer 02 # Displayed in HA frontend
+  # fan_entity: fan.sonoff_ifan03_01_fan
+  # light_entity: light.sonoff_ifan03_01_light
+  # led_entity: ""
+
+esphome:
+  name: ${device_name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+  project:
+    name: ${project_name}
+    version: ${project_version}
+  platformio_options:
+    build_flags:
+      - -DNDEBUG
+      - -Os
+
+esp8266:
+  board: esp01_1m
+  restore_from_flash: true
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  # Expose the script as a service to HA
+  actions:
+    - action: update_leds
+      variables:
+        my_led_mode: string
+      then:
+        - script.execute:
+            id: update_leds
+            mode: !lambda 'return my_led_mode;'
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:  
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  ap:
+    ssid: ${friendly_name} AP
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+  port: 80
+  version: 3
+
+logger:
+  level: WARN
+  baud_rate: 0
 
 # GPI Mappings
 # GPIO0 - Up button (input, pullup, inverted)
@@ -13,130 +73,71 @@
 # GPIO15 - Main button (input, pullup)
 # GPIO16 - Relay control (output, inverted)
 
-# https://esphome.io/guides/configuration-types.html#substitutions
-substitutions:
-  location: Office
-  name: mj_sd01_dimmer_02 # hostname & entity_id
-  friendly_name: MJ-SD01 Dimmer 02 # Displayed in HA frontend
-  fan_entity: fan.sonoff_ifan03_01_fan
-  light_entity: light.sonoff_ifan03_01_light
-  led_entity: ""
-
-
-# https://esphome.io/components/esphome
-esphome:
-  name: ${name}
-  name_add_mac_suffix: false
-  friendly_name: ${friendly_name}
-
-# https://esphome.io/components/esp8266.html  
-esp8266:
-  board: esp01_1m
-
-# https://esphome.io/components/api
-api:
-  encryption:
-    key: !secret api_encryption_key
-
-# https://esphome.io/components/ota
-ota:
-  - platform: esphome
-    password: !secret ota_password
-
-# https://esphome.io/components/wifi
-wifi:  
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  
-  ap:
-    ssid: ${friendly_name} AP
-    password: !secret ap_password
-
-captive_portal:
-
-# https://esphome.io/components/web_server.html
-web_server:
-  port: 80
-  version: 3
-
-# https://esphome.io/components/logger
-logger:
-
-sensor:
-  - platform: wifi_signal
-    name: "WiFi Signal"
-    update_interval: 60s
-  - platform: homeassistant
-    id: ha_fan_pct
-    entity_id: ${fan_entity}
-    attribute: percentage
-
-# --- Buttons ---
 binary_sensor:
-  - platform: homeassistant
-    id: ha_light_state
-    entity_id: ${light_entity}
-  - platform: homeassistant
-    id: ha_fan_state
-    entity_id: ${fan_entity}
-
   - platform: gpio
+    id: main_button
     pin:
       number: GPIO15
       mode: INPUT_PULLUP
     name: "Main Button"
-    on_press:
-      - homeassistant.service:
-          service: light.toggle
-          data:
-            entity_id: ${light_entity}
+    on_multi_click:
+      - timing:
+          - ON for at most 1s
+          - OFF for at least 0.5s
+        then:
+          - homeassistant.event:
+              event: esphome.button_pressed
+              data:
+                button_name: ${device_name}_main_single
+
+      - timing:
+          - ON for at most 1s
+          - OFF for at most 1s
+          - ON for at most 1s
+          - OFF for at least 0.2s
+        then:
+          - homeassistant.event:
+              event: esphome.button_pressed
+              data:
+                button_name: ${device_name}_main_double
 
   - platform: gpio
+    id: up_button
     pin:
       number: GPIO0
       mode: INPUT_PULLUP
       inverted: true
     name: "Up Button"
     on_press:
-      - if:
-          condition:
-            binary_sensor.is_off: ha_fan_state
-          then:
-            - homeassistant.service:
-                service: fan.set_percentage
-                data:
-                  entity_id: ${fan_entity}
-                  percentage: '33'
-          else:
-            - homeassistant.service:
-                service: fan.increase_speed
-                data:
-                  entity_id: ${fan_entity}
+      - homeassistant.event:
+          event: esphome.button_pressed
+          data:
+            button_name: ${device_name}_up
 
   - platform: gpio
+    id: down_button
     pin:
       number: GPIO1
       mode: INPUT_PULLUP
       inverted: true
     name: "Down Button"
     on_press:
-      - if:
-          condition:
-            and:
-              - binary_sensor.is_on: ha_fan_state
-              - lambda: 'return (int)id(ha_fan_pct).state == 33;'
-          then:
-            - homeassistant.service:
-                service: fan.turn_off
-                data:
-                  entity_id: ${fan_entity}
-          else:
-            - homeassistant.service:
-                service: fan.decrease_speed
-                data:
-                  entity_id: ${fan_entity}
+      - homeassistant.event:
+          event: esphome.button_pressed
+          data:
+            button_name: ${device_name}_down
 
-# --- Outputs (LEDs + Relay) ---
+button:
+  - platform: restart
+    name: "ESP8266 Restart"
+    icon: mdi:power-cycle
+    entity_category: diagnostic
+
+  - platform: factory_reset
+    name: "ESP8266 Factory Reset"
+    icon: mdi:restart-alert
+    entity_category: diagnostic
+
 output:
   - platform: gpio
     pin: GPIO4
@@ -144,7 +145,7 @@ output:
     inverted: true
   - platform: gpio
     pin: GPIO16
-    id: relay_led
+    id: led1 # Relay LED
     inverted: true
   - platform: gpio
     pin: GPIO14
@@ -163,44 +164,72 @@ output:
     id: led5
     inverted: true
 
-interval:
-  - interval: 1s
+# Script to update LEDs based on HA command
+script:
+  - id: update_leds
+    parameters:
+      mode: string
     then:
       - if:
           condition:
-            and:
-              - binary_sensor.is_off: ha_light_state
-              - binary_sensor.is_off: ha_fan_state
+            lambda: 'return mode == "light_on";'
           then:
-            - output.turn_on: red_led    # Both Light and Fan OFF → LED ON (night light)
-          else:
-            - output.turn_off: red_led   # Either Light or Fan ON → LED OFF
-  - interval: 1s
-    then:
-      - lambda: |-
-          // Clear all LEDs first
-          id(relay_led).turn_off();
-          id(led2).turn_off();
-          id(led3).turn_off();
-          id(led4).turn_off();
-          id(led5).turn_off();
+            - output.turn_off: red_led
+      - if:
+          condition:
+            lambda: 'return mode == "light_off";'
+          then:
+            - output.turn_on: red_led
 
-          // Only light LEDs if fan is ON
-          if (id(ha_fan_state).state) {
-            int pct = (int) id(ha_fan_pct).state;
-            if (pct == 33) {
-              id(relay_led).turn_on();
-            } else if (pct == 66) {
-              id(relay_led).turn_on();
-              id(led2).turn_on();
-              id(led3).turn_on();
-            } else if (pct == 100) {
-              id(relay_led).turn_on();
-              id(led2).turn_on();
-              id(led3).turn_on();
-              id(led4).turn_on();
-              id(led5).turn_on();
-            }
-          }
+      - if:
+          condition:
+            lambda: 'return mode == "fan_off";'
+          then:
+            - output.turn_off: led1
+            - output.turn_off: led2
+            - output.turn_off: led3
+            - output.turn_off: led4
+            - output.turn_off: led5
 
+      - if:
+          condition:
+            lambda: 'return mode == "fan_low";'
+          then:
+            - output.turn_on: led1
+            - output.turn_off: led2
+            - output.turn_off: led3
+            - output.turn_off: led4
+            - output.turn_off: led5
 
+      - if:
+          condition:
+            lambda: 'return mode == "fan_medium";'
+          then:
+            - output.turn_on: led1
+            - output.turn_on: led2
+            - output.turn_on: led3
+            - output.turn_off: led4
+            - output.turn_off: led5
+
+      - if:
+          condition:
+            lambda: 'return mode == "fan_high";'
+          then:
+            - output.turn_on: led1
+            - output.turn_on: led2
+            - output.turn_on: led3
+            - output.turn_on: led4
+            - output.turn_on: led5
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+    icon: mdi:wifi
+
+text_sensor:
+  - platform: version
+    name: "ESPHome Version"
+    entity_category: diagnostic
+    icon: mdi:information-outline
